@@ -1,0 +1,11 @@
+# Mix artifacts
+_build
+deps
+*.ez
+
+# IDE shit
+.idea
+*.iml
+
+# Misc
+README.md
