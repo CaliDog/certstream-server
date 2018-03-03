@@ -1,7 +1,7 @@
 require IEx
 require Logger
 
-defmodule Certstream.CT.Watcher do
+defmodule Certstream.CTWatcher do
   use GenServer
 
   @bad_ctl_servers [
@@ -9,26 +9,37 @@ defmodule Certstream.CT.Watcher do
     "ct.gdca.com.cn/", "ct.izenpe.com/", "ct.izenpe.eus/", "ct.sheca.com/", "ct.startssl.com/", "ct.wosign.com/",
     "ctserver.cnnic.cn/", "ctlog.api.venafi.com/", "ctlog.gdca.com.cn/", "ctlog.sheca.com/", "ctlog.wosign.com/",
     "ctlog2.wosign.com/", "flimsy.ct.nordu.net:8080/", "log.certly.io/", "nessie2021.ct.digicert.com/log/",
-    "plausible.ct.nordu.net/", "www.certificatetransparency.cn/ct/",
+    "plausible.ct.nordu.net/", "www.certificatetransparency.cn/ct/", "ct.googleapis.com/testtube/",
+    "ct.googleapis.com/daedalus/"
   ]
 
-  def run do
-    Certstream.WebsocketServer.start
+  def child_spec(log) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [log]},
+      restart: :permanent,
+    }
+  end
+
+  def start_and_link_watchers(name: supervisor_name) do
+    Logger.info("Initializing CT Watchers...")
     fetch_all_logs()
-      |> Enum.map(fn log ->
-          GenServer.start_link(
-            __MODULE__,
-            %{
-              :operator => log,
-              :url => log["url"],
-            })
+      |> Enum.each(fn log ->
+           DynamicSupervisor.start_child(supervisor_name, child_spec(log))
          end)
+  end
+
+  def start_link(log) do
+    GenServer.start_link(
+      __MODULE__,
+      %{:operator => log, :url => log["url"]}
+    )
   end
 
   defp fetch_all_logs do
     case HTTPoison.get("https://www.gstatic.com/ct/log_list/all_logs_list.json") do
       {:ok, response} ->
-        ctl_log_info = Poison.Parser.parse!(response.body)
+        ctl_log_info = Jason.decode!(response.body)
 
         ctl_log_info
           |> Map.get("logs")
@@ -74,9 +85,12 @@ defmodule Certstream.CT.Watcher do
 
     Logger.debug("Tree size #{current_size} - #{state[:tree_size]}")
 
-    if current_size > state[:tree_size] do
-      Logger.debug("Worker #{inspect self()} with url #{state[:url]} found #{current_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_size}].")
-      broadcast_updates(state, current_size)
+    state = case current_size > state[:tree_size] do
+      true ->
+        Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_size}].")
+        broadcast_updates(state, current_size)
+        Map.put(state, :tree_size, current_size)
+      false -> state
     end
 
     schedule_update()
@@ -85,13 +99,13 @@ defmodule Certstream.CT.Watcher do
   end
 
   defp fetch_update(state, start, end_) do
-    Logger.debug("GETing https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}")
+    Logger.info("GETing https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}")
 
     case HTTPoison.get("https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}", [], [timeout: 60_000, recv_timeout: 60_000]) do
       {:ok, response} ->
         response
           |> Map.get(:body)
-          |> Poison.Parser.parse!
+          |> Jason.decode!
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         Logger.error("Error fetching url https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}: #{reason}!")
@@ -102,10 +116,15 @@ defmodule Certstream.CT.Watcher do
 
   defp fetch_tree_size(state) do
     case HTTPoison.get("https://#{state[:url]}ct/v1/get-sth", [], [timeout: 60_000, recv_timeout: 60_000]) do
-      {:ok, response} ->
+      {:ok, %HTTPoison.Response{status_code: 200} = response} ->
         response.body
-        |> Poison.Parser.parse!
+        |> Jason.decode!
         |> Map.get("tree_size")
+
+      {:ok, response} ->
+        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-sth: #{reason}! Sleeping for a bit and trying again...")
+        :timer.sleep(10_000)
+        fetch_tree_size(state)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         Logger.error("Error fetching url https://#{state[:url]}ct/v1/get-sth: #{reason}! Sleeping for a bit and trying again...")
@@ -124,10 +143,11 @@ defmodule Certstream.CT.Watcher do
            fn ids ->
              update = fetch_update(state, List.first(ids), List.last(ids))
 
-             update["entries"]
+             update
+               |> Map.get("entries", [])
                |> Enum.zip(ids)
                |> Enum.map(fn {entry, cert_index} ->
-                 parsed_entry = Certstream.CT.Parser.parse_entry(entry)
+                 parsed_entry = Certstream.CTParser.parse_entry(entry)
                  parsed_entry
                    |> Map.merge(
                         %{
@@ -137,18 +157,16 @@ defmodule Certstream.CT.Watcher do
                             :url => state[:operator]["url"],
                             :name => state[:operator]["description"],
                           },
-                          :cert_link => "http://#{state[:operator]["url"]}/ct/v1/get-entries?start=#{cert_index}&end=#{cert_index}"
+                          :cert_link => "http://#{state[:operator]["url"]}ct/v1/get-entries?start=#{cert_index}&end=#{cert_index}"
                         }
                       )
                  end)
                |> Certstream.ClientManager.broadcast_to_clients
            end)
-
-    Map.put(state, :tree_size, current_size)
   end
 
   defp schedule_update do
-    Process.send_after(self(), :update, 15 * 1000) # In 15 seconds
+    Process.send_after(self(), :update, :timer.seconds(15)) # In 15 seconds
   end
 
 end

@@ -1,4 +1,4 @@
-defmodule Certstream.CT.Parser do
+defmodule Certstream.CTParser do
   @moduledoc false
 
   @log_entry_types %{0 => :X509LogEntry, 1 => :PrecertLogEntry}
@@ -52,7 +52,7 @@ defmodule Certstream.CT.Parser do
 
   defp parse_certificate(certificate_data) do
     EasySSL.parse_der(certificate_data)
-    |> Map.put(:as_der, Base.encode64(certificate_data))
+      |> Map.put(:as_der, Base.encode64(certificate_data))
   end
 
   defp parse_certificate_chain(<<size :: size(24), certificate_data :: binary - size(size), rest :: binary>>, entries) do

@@ -1,3 +1,3 @@
 use Mix.Config
 
-config :logger, level: :debug, backends: [:console]
+config :logger, level: :info, backends: [:console]

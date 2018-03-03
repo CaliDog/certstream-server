@@ -1,6 +1,7 @@
 require Logger
 
-defmodule Certstream.APIServer do
+defmodule Certstream.WebsocketServer do
+  use GenServer
 
   @certstream_html """
   <!DOCTYPE html>
@@ -16,61 +17,58 @@ defmodule Certstream.APIServer do
   </html>
   """
 
-  def init(req, [:example_json] = state) do
+  # GenServer callback
+  def init(args) do {:ok, args} end
+
+  # /example.json handler
+  def init(req, [:example_json]) do
     res = :cowboy_req.reply(
       200,
       %{'content_type' => 'application/json'},
       Certstream.CertifcateBuffer.get_example_json(),
       req
     )
-    {:ok, res, state}
+    {:ok, res, %{}}
   end
 
-  def init(req, [:latest_json] = state) do
+  # /latest.json handler
+  def init(req, [:latest_json]) do
     res = :cowboy_req.reply(
       200,
       %{'content_type' => 'application/json'},
       Certstream.CertifcateBuffer.get_latest_json(),
       req
     )
-    {:ok, res, state}
+    {:ok, res, %{}}
   end
 
-  def serve_root(req, state) do
-    res = :cowboy_req.reply(200, %{'content_type' => 'text/html'}, @certstream_html, req)
-    {:ok, res, state}
-  end
-
-end
-
-defmodule Certstream.WebsocketServer do
-  @moduledoc false
-
+  # / handler
   def init(req, state) do
     # If we have a websocket request, do the thing, otherwise just host our main HTML
-    if is_websocket_req(req) do
+    if Map.has_key?(req.headers, "upgrade") do
       Logger.info("New client connected #{inspect req.peer}")
       {
         :cowboy_websocket,
         req,
-        %{:headers => req.headers, :qs => req.qs, :peer => req.peer},
+        %{:is_websocket => true, :connect_time => DateTime.utc_now},
         %{:idle_timeout => 12 * 60 * 60 * 1000, :compress => true}
       }
     else
-      Certstream.APIServer.serve_root(req, state)
+      res = :cowboy_req.reply(
+        200,
+        %{'content_type' => 'text/html'},
+        @certstream_html,
+        req
+      )
+      {:ok, res, state}
     end
   end
 
-  def terminate(_reason, partial_req, _state) do
-    if is_websocket_req(partial_req) do
+  def terminate(_reason, _partial_req, state) do
+    if state[:is_websocket] do
       Logger.info("Client disconnected #{inspect self()}")
       Certstream.ClientManager.remove_client(self())
     end
-    :ok
-  end
-
-  defp is_websocket_req(req) do
-    Map.has_key?(req.headers, "upgrade")
   end
 
   def websocket_init(state) do
@@ -85,7 +83,7 @@ defmodule Certstream.WebsocketServer do
 
   def websocket_info({:mail, box_pid, payload, _message_count, message_drop_count}, state) do
     if message_drop_count > 0 do
-      Logger.warn("Message drop count > 0 -> #{message_drop_count}")
+      Logger.warn("Message drop count greater than 0 -> #{message_drop_count}")
     end
 
     Logger.debug("Sending client #{length(payload |> List.flatten)} client frames")
@@ -100,26 +98,42 @@ defmodule Certstream.WebsocketServer do
     }
   end
 
-  def start() do
-    Certstream.ClientManager.run()
-    Certstream.CertifcateBuffer.run()
-
-    {:ok, _pid} = :cowboy.start_clear(
+  def start_link(_opts) do
+    Logger.info("Starting web server on port #{get_port()}...")
+    :cowboy.start_clear(
       :websocket_server,
-      [{:port, 4000}],
+      [{:port, get_port()}],
       %{
         :env => %{
           :dispatch => :cowboy_router.compile([
             { :_,
               [
-                {"/", Certstream.WebsocketServer, []},
-                {"/example.json", Certstream.APIServer, [:example_json]},
-                {"/latest.json", Certstream.APIServer, [:latest_json]}
+                {"/", __MODULE__, []},
+                {"/example.json", __MODULE__, [:example_json]},
+                {"/latest.json", __MODULE__, [:latest_json]}
               ]}
           ])
         },
       }
     )
+
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  end
+
+  def child_spec(opts) do
+    %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [opts]},
+      restart: :permanent,
+      name: __MODULE__
+    }
+  end
+
+  defp get_port do
+    case System.get_env("PORT") do
+      nil -> 4000
+      port_string ->  port_string |> Integer.parse |> elem(0)
+    end
   end
 
 end
