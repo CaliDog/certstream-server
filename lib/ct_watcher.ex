@@ -1,4 +1,3 @@
-require IEx
 require Logger
 
 defmodule Certstream.CTWatcher do
@@ -102,10 +101,14 @@ defmodule Certstream.CTWatcher do
     Logger.info("GETing https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}")
 
     case HTTPoison.get("https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}", [], [timeout: 60_000, recv_timeout: 60_000]) do
-      {:ok, response} ->
-        response
-          |> Map.get(:body)
+      {:ok, %HTTPoison.Response{status_code: 200} = response} ->
+        response.body
           |> Jason.decode!
+
+      {:ok, response} ->
+        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}, sleeping and trying again!")
+        :timer.sleep(10_000)
+        fetch_update(state, start, end_)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         Logger.error("Error fetching url https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}: #{reason}!")
@@ -122,7 +125,7 @@ defmodule Certstream.CTWatcher do
         |> Map.get("tree_size")
 
       {:ok, response} ->
-        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-sth: #{reason}! Sleeping for a bit and trying again...")
+        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-sth:! Sleeping for a bit and trying again...")
         :timer.sleep(10_000)
         fetch_tree_size(state)
 
