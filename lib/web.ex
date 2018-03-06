@@ -106,7 +106,7 @@ defmodule Certstream.WebsocketServer do
       %{
         :env => %{
           :dispatch => :cowboy_router.compile([
-            { :_,
+            {:_,
               [
                 {"/", __MODULE__, []},
                 {"/example.json", __MODULE__, [:example_json]},

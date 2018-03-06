@@ -15,7 +15,7 @@ defmodule Certstream.Supervisor do
       Certstream.ClientManager,
       Certstream.CertifcateBuffer,
 
-      # Watcher
+      # Watchers
       {DynamicSupervisor, name: WatcherSupervisor, strategy: :one_for_one}
     ]
 

@@ -3,13 +3,12 @@ require Logger
 defmodule Certstream.CertifcateBuffer do
   use Agent
 
-  @doc """
-    An agent designed to effectively ring-buffer certificate updates as they come in so
-    the most recent 25 certificates can be aggregated in a json-based API.
-
-    Basically, this is what feeds both the `/example.json` and `latest.json` endpoints.
+  @moduledoc """
+    An agent designed to ring-buffer certificate updates as they come in so the most recent 25 certificates can be
+    aggregated for the /example.json and /latest.json routes.
   """
 
+  @doc "Starts the CertificateBuffer agent and creates an ETS table for tracking the certificates processed"
   def start_link(_opts) do
     Logger.info("Starting #{__MODULE__}...")
     Agent.start_link(
@@ -45,6 +44,7 @@ defmodule Certstream.CertifcateBuffer do
     end)
   end
 
+  @doc "The number of certificates processed, in human-readable/formatted string output"
   def get_processed_certificates do
     :ets.lookup(:counter, :processed_certificates)
       |> Keyword.get(:processed_certificates)
