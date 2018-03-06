@@ -1,7 +1,10 @@
 defmodule Certstream.CTParser do
   @moduledoc false
 
-  @log_entry_types %{0 => :X509LogEntry, 1 => :PrecertLogEntry}
+  @log_entry_types %{
+    0 => :X509LogEntry,
+    1 => :PrecertLogEntry
+  }
 
   def parse_entry(entry) do
     leaf_input = Base.decode64!(entry["leaf_input"])
@@ -44,19 +47,22 @@ defmodule Certstream.CTParser do
     >> = extra_data
 
     [
-      parse_certificate(certificate_data),
+      parse_certificate(certificate_data, :leaf),
       parse_certificate_chain(extra_chain, [])
     ]
 
   end
 
-  defp parse_certificate(certificate_data) do
-    EasySSL.parse_der(certificate_data)
-      |> Map.put(:as_der, Base.encode64(certificate_data))
+  defp parse_certificate(certificate_data, type) do
+    case type do
+      :leaf -> EasySSL.parse_der(certificate_data, serialize: true, all_domains: true)
+      :chain -> EasySSL.parse_der(certificate_data, serialize: true)
+    end
+
   end
 
   defp parse_certificate_chain(<<size :: size(24), certificate_data :: binary - size(size), rest :: binary>>, entries) do
-    parse_certificate_chain(rest, [parse_certificate(certificate_data) | entries])
+    parse_certificate_chain(rest, [parse_certificate(certificate_data, :chain) | entries])
   end
 
   defp parse_certificate_chain(<<>>, entries) do
@@ -69,7 +75,7 @@ defmodule Certstream.CTParser do
            _extensions :: size(16)>>)
     do
 
-    parse_certificate(certificate_data)
+    parse_certificate(certificate_data, :leaf)
   end
 
   defp parse_leaf_entry(:PrecertLogEntry, _entry) do [] end  # For now we don't parse these and rely on everything in "extra_data" only
