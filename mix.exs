@@ -7,7 +7,10 @@ defmodule Certstream.Mixfile do
       version: "1.0.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env == :prod,
-      deps: deps()
+      deps: deps(),
+      aliases: aliases(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: ["coveralls": :test, "coveralls.detail": :test, "coveralls.post": :test, "coveralls.html": :test]
     ]
   end
 
@@ -25,8 +28,15 @@ defmodule Certstream.Mixfile do
       {:cowboy, "~> 2.2"},
       {:pobox, "~> 1.0.2"},
       {:number, "~> 0.5.5"},
-      {:easy_ssl, "~> 1.0.2"},
+      {:easy_ssl, "~> 1.0.3"},
       {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.8", only: :test}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: "test --no-start"
     ]
   end
 end
