@@ -40,6 +40,32 @@ This will open up an http/websocket server on port 4000 (override this by settin
 
 Connecting over a normal HTTP connection will show the certstream introduction and frontpage. 
 
+## Internals
+
+The structure of the application is pretty simple, and is essentially entirely outlined in the [supervisor configuration](https://github.com/CaliDog/certstream-server/blob/master/lib/supervisor.ex#L11-L19). 
+
+The dataflow basically looks like this
+
+```
+               CertifcateBuffer
+                      |
+HTTP Watcher \        |        / Websocket Connection Process
+HTTP Watcher  - ClientManager -  Websocket Connection Process
+HTTP Watcher /                 \ Websocket Connection Process
+
+```
+### HTTP Watchers
+First we spin up 1 process for every entry in the [known CTL list from the CT project](https://www.gstatic.com/ct/log_list/all_logs_list.json), with each of them being responsible for sleeping for 10 seconds and checking to see if the top of the merkle tree has changed. Once a difference has been found, they go out and download the certificate data, parsing it and coercing it to a hashmap structure using [the EasySSL library](https://github.com/CaliDog/EasySSL) and sending it to the ClientManager.
+
+### ClientManager
+This agent is responsible for brokering communication between the CT watchers and the currently connected websocket clients. Certificates are broadcast to websocket connection processes through an erlang [pobox](https://github.com/ferd/pobox) in order to properly load-shed when a slow client isn't reading certificates fast enough. The ClientManager also sends a copy of every certificate recieved to the CertificateBuffer.
+
+### CertificateBuffer
+This agent is responsible for keeping a ring-buffer in memory of the most recently seen 25 certificates, as well as counting the certificates processed by Certstream.
+
+### Websocket Connection Process
+Under the hood we use the erlang library [Cowboy](https://github.com/ninenines/cowboy) to handle static content serving, the json APIs, and websocket connections. There's nothing too special about them other than they're assigned a paired pobox at the start of every connection. 
+
 ## HTTP Routes
 
 `/latest.json` - Get the most recent 25 certificates CertStream has seen
