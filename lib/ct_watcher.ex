@@ -27,7 +27,7 @@ defmodule Certstream.CTWatcher do
   end
 
   defp fetch_all_logs do
-    case HTTPoison.get("https://www.gstatic.com/ct/log_list/all_logs_list.json") do
+    case HTTPoison.get(Application.get_env(:ctwatcher, :log_list)) do
       {:ok, response} ->
         ctl_log_info = Jason.decode!(response.body)
 

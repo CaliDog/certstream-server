@@ -1,6 +1,7 @@
 use Mix.Config
 
 config :ctwatcher,
+    log_list: "https://www.gstatic.com/ct/log_list/all_logs_list.json",
     bad_ct_servers: [
     "alpha.ctlogs.org/", "clicky.ct.letsencrypt.org/", "ct.akamai.com/", "ct.filippo.io/behindthesofa/",
     "ct.gdca.com.cn/", "ct.izenpe.com/", "ct.izenpe.eus/", "ct.sheca.com/", "ct.startssl.com/", "ct.wosign.com/",
