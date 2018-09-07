@@ -3,15 +3,6 @@ require Logger
 defmodule Certstream.CTWatcher do
   use GenServer
 
-  @bad_ctl_servers [
-    "alpha.ctlogs.org/", "clicky.ct.letsencrypt.org/", "ct.akamai.com/", "ct.filippo.io/behindthesofa/",
-    "ct.gdca.com.cn/", "ct.izenpe.com/", "ct.izenpe.eus/", "ct.sheca.com/", "ct.startssl.com/", "ct.wosign.com/",
-    "ctserver.cnnic.cn/", "ctlog.api.venafi.com/", "ctlog.gdca.com.cn/", "ctlog.sheca.com/", "ctlog.wosign.com/",
-    "ctlog2.wosign.com/", "flimsy.ct.nordu.net:8080/", "log.certly.io/", "nessie2021.ct.digicert.com/log/",
-    "plausible.ct.nordu.net/", "www.certificatetransparency.cn/ct/", "ct.googleapis.com/testtube/",
-    "ct.googleapis.com/daedalus/"
-  ]
-
   def child_spec(log) do
     %{
       id: __MODULE__,
@@ -36,7 +27,7 @@ defmodule Certstream.CTWatcher do
   end
 
   defp fetch_all_logs do
-    case HTTPoison.get("https://www.gstatic.com/ct/log_list/all_logs_list.json") do
+    case HTTPoison.get(Application.get_env(:ctwatcher, :log_list)) do
       {:ok, response} ->
         ctl_log_info = Jason.decode!(response.body)
 
@@ -45,7 +36,7 @@ defmodule Certstream.CTWatcher do
           # Replace the operator IDs with a hashmap of id/name
           |> Enum.map(&(replace_operator(&1, ctl_log_info["operators"])))
           # Filter out any blacklisted CTLs
-          |> Enum.filter(&(!Enum.member?(@bad_ctl_servers, &1["url"])))
+          |> Enum.filter(&(!Enum.member?(Application.get_env(:ctwatcher, :bad_ct_servers), &1["url"])))
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         Logger.error("Error: #{reason}! Sleeping for 10 seconds and trying again...")
