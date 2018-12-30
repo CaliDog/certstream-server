@@ -3,20 +3,6 @@ require Logger
 defmodule Certstream.WebsocketServer do
   use GenServer
 
-  @certstream_html """
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <meta charset="utf-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1">
-      <link href="https://fonts.googleapis.com/css?family=Open+Sans:400,700" rel="stylesheet">
-    </head>
-    <body>
-      <div id="app"></div>
-    <script type="text/javascript" src="https://storage.googleapis.com/certstream-prod/build.js?v=#{Mix.Project.config[:version]}"></script></body>
-  </html>
-  """
-
   # GenServer callback
   def init(args) do {:ok, args} end
 
@@ -42,6 +28,26 @@ defmodule Certstream.WebsocketServer do
     {:ok, res, %{}}
   end
 
+  # /stats handler
+  def init(req, [:stats]) do
+    processed_certs = Certstream.CertifcateBuffer.get_processed_certificates
+    client_json = Certstream.ClientManager.get_clients_json
+
+    response = %{}
+               |> Map.put(:processed_certificates, processed_certs)
+               |> Map.put(:current_users, client_json)
+               |> Jason.encode!()
+               |> Jason.Formatter.pretty_print
+
+    res = :cowboy_req.reply(
+      200,
+      %{'content_type' => 'application/json'},
+      response,
+      req
+    )
+    {:ok, res, %{}}
+  end
+
   # / handler
   def init(req, state) do
     # If we have a websocket request, do the thing, otherwise just host our main HTML
@@ -50,14 +56,19 @@ defmodule Certstream.WebsocketServer do
       {
         :cowboy_websocket,
         req,
-        %{:is_websocket => true, :connect_time => DateTime.utc_now},
+        %{
+          :is_websocket => true,
+          :connect_time => DateTime.utc_now,
+          :ip_address => req.peer |> elem(0) |> :inet_parse.ntoa |> to_string,
+          :headers => req.headers
+        },
         %{:idle_timeout => 12 * 60 * 60 * 1000, :compress => true}
       }
     else
       res = :cowboy_req.reply(
         200,
         %{'content_type' => 'text/html'},
-        @certstream_html,
+        File.read!("html/dist/index.html"),
         req
       )
       {:ok, res, state}
@@ -110,7 +121,9 @@ defmodule Certstream.WebsocketServer do
               [
                 {"/", __MODULE__, []},
                 {"/example.json", __MODULE__, [:example_json]},
-                {"/latest.json", __MODULE__, [:latest_json]}
+                {"/latest.json", __MODULE__, [:latest_json]},
+                {"/static/[...]", :cowboy_static, {:dir, "html/dist/static/"}},
+                {"/#{System.get_env(~s(STATS_URL)) || 'stats'}", __MODULE__, [:stats]}
               ]}
           ])
         },

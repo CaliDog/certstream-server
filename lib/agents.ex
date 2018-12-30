@@ -116,7 +116,18 @@ defmodule Certstream.ClientManager do
   end
 
   def get_clients_json do
-    #DateTime.diff(DateTime.utc_now, old)
+    Agent.get(__MODULE__, fn state ->
+
+      state
+        |> Enum.map(fn {k,v} ->
+
+          coerced_payload = v
+                            |> Map.update!(:connect_time, &DateTime.to_iso8601/1)
+                            |> Map.drop([:po_box, :is_websocket])
+          {inspect(k), coerced_payload}
+        end)
+        |> Enum.into(%{})
+    end)
   end
 
   def broadcast_to_clients(entries) do
