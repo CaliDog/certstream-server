@@ -9,3 +9,5 @@ deps
 
 # Misc
 README.md
+
+node_modules/
