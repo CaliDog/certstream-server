@@ -10,7 +10,7 @@ module.exports = {
   entry: './src/main.js',
   output: {
       path: path.resolve(__dirname, './dist/'),
-      filename: 'static/build.js',
+      filename: 'static/build-[hash].js',
   },
   module: {
     rules: [
@@ -91,21 +91,15 @@ module.exports = {
     }),
     new CleanWebpackPlugin(['dist']),
     new HtmlWebpackPlugin({
-      template: 'index.html'
+      template: 'src/index.html'
     }),
   ]
 };
 
 if (process.env.NODE_ENV === 'production') {
   module.exports.devtool = '#source-map'
-    module.exports.output.publicPath = "https://storage.googleapis.com/certstream-prod/";
   // http://vue-loader.vuejs.org/en/workflow/production.html
   module.exports.plugins = (module.exports.plugins || []).concat([
-    new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: '"production"'
-      }
-    }),
     new webpack.optimize.UglifyJsPlugin({
       sourceMap: false,
       compress: {
