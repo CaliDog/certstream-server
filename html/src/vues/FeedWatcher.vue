@@ -143,7 +143,11 @@
 
                 console.log("Connecting to certstream...");
 
-                this.ws = new RobustWebSocket("ws://" + location.host + "/");
+                if(location.protocol === 'https:'){
+                    this.ws = new RobustWebSocket("wss://" + location.host + "/");
+                } else {
+                    this.ws = new RobustWebSocket("ws://" + location.host + "/");
+                }
 
                 this.ws.debug = true;
 
