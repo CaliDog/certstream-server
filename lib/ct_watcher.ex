@@ -78,11 +78,11 @@ defmodule Certstream.CTWatcher do
   end
 
   def handle_info(:update, state) do
-    Logger.debug("Worker #{inspect self()} got tick.")
+    Logger.debug(fn -> "Worker #{inspect self()} got tick." end)
 
     current_size = fetch_tree_size(state)
 
-    Logger.debug("Tree size #{current_size} - #{state[:tree_size]}")
+    Logger.debug(fn -> "Tree size #{current_size} - #{state[:tree_size]}" end)
 
     state = case current_size > state[:tree_size] do
       true ->
