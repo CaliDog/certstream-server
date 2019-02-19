@@ -83,7 +83,7 @@ defmodule Certstream.ClientManager do
   end
 
   def add_client(client_pid, client_state) do
-    {:ok, box_pid} = :pobox.start_link(client_pid, 5, :queue)
+    {:ok, box_pid} = :pobox.start_link(client_pid, 500, :queue)
 
     :pobox.active(box_pid, fn(msg, _) -> {{:ok, msg}, :nostate} end, :nostate)
 
