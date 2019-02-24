@@ -88,7 +88,9 @@ defmodule Certstream.CTWatcher do
       true ->
         Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_size}].")
         broadcast_updates(state, current_size)
-        Map.put(state, :tree_size, current_size)
+        state
+          |> Map.put(:tree_size, current_size)
+          |> Map.update(:processed_count, 0, &(&1 + (current_size - state[:tree_size])))
       false -> state
     end
 

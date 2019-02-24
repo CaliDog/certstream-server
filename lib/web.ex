@@ -33,10 +33,17 @@ defmodule Certstream.WebsocketServer do
     processed_certs = Certstream.CertifcateBuffer.get_processed_certificates
     client_json = Certstream.ClientManager.get_clients_json
 
+    workers = DynamicSupervisor.which_children(WatcherSupervisor)
+      |> Enum.reduce(%{}, fn {:undefined, pid, :worker, _module}, acc ->
+          state = :sys.get_state pid
+          Map.put(acc, state[:url], state)
+         end)
+
     response = %{}
                |> Map.put(:processed_certificates, processed_certs)
                |> Map.put(:current_users, client_json)
-               |> Jason.encode!()
+               |> Map.put(:workers, workers)
+               |> Jason.encode!
                |> Jason.Formatter.pretty_print
 
     res = :cowboy_req.reply(
@@ -52,7 +59,7 @@ defmodule Certstream.WebsocketServer do
   def init(req, state) do
     # If we have a websocket request, do the thing, otherwise just host our main HTML
     if Map.has_key?(req.headers, "upgrade") do
-      Logger.info("New client connected #{inspect req.peer}")
+      Logger.debug("New client connected #{inspect req.peer}")
       {
         :cowboy_websocket,
         req,
@@ -77,7 +84,7 @@ defmodule Certstream.WebsocketServer do
 
   def terminate(_reason, _partial_req, state) do
     if state[:is_websocket] do
-      Logger.info("Client disconnected #{inspect self()}")
+      Logger.debug("Client disconnected #{inspect state.ip_address}")
       Certstream.ClientManager.remove_client(self())
     end
   end
@@ -88,7 +95,7 @@ defmodule Certstream.WebsocketServer do
   end
 
   def websocket_handle(frame, state) do
-    Logger.info("Client sent message #{inspect frame}")
+    Logger.debug("Client sent message #{inspect frame}")
     {:ok, state}
   end
 
