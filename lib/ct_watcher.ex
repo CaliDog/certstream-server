@@ -9,7 +9,9 @@ defmodule Certstream.CTWatcher do
     "ctserver.cnnic.cn/", "ctlog.api.venafi.com/", "ctlog.gdca.com.cn/", "ctlog.sheca.com/", "ctlog.wosign.com/",
     "ctlog2.wosign.com/", "flimsy.ct.nordu.net:8080/", "log.certly.io/", "nessie2021.ct.digicert.com/log/",
     "plausible.ct.nordu.net/", "www.certificatetransparency.cn/ct/", "ct.googleapis.com/testtube/",
-    "ct.googleapis.com/daedalus/"
+    "ct.googleapis.com/daedalus/",
+    "ct.ws.symantec.com/", "vega.ws.symantec.com/", "deneb.ws.symantec.com/", "sirius.ws.symantec.com/",
+    "log.gdca.com.cn/", "log2.gdca.com.cn/",
   ]
 
   def child_spec(log) do
