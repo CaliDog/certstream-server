@@ -113,29 +113,29 @@ defmodule Certstream.CTWatcher do
   defp fetch_update(state, start, end_) do
     Logger.info("GETing https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}")
 
-    case HTTPoison.get("https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}", [], [timeout: 60_000, recv_timeout: 60_000]) do
+    case HTTPoison.get("https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}", [], [timeout: 10_000, recv_timeout: 10_000]) do
       {:ok, %HTTPoison.Response{status_code: 200} = response} ->
         response.body
           |> Jason.decode!
 
       {:ok, response} ->
-        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}, sleeping and trying again!")
+        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}! Sleeping for a bit and trying again...")
         :timer.sleep(10_000)
         fetch_update(state, start, end_)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("Error fetching url https://#{state[:url]}ct/v1/get-entries?start=#{start}&end=#{end_}: #{reason}!")
-        :timer.sleep(10_000)
+        Logger.error("Error: #{reason}! Sleeping for 10 seconds and trying again...")
+        :timer.sleep(:timer.seconds(10))
         fetch_update(state, start, end_)
     end
   end
 
   defp fetch_tree_size(state) do
-    case HTTPoison.get("https://#{state[:url]}ct/v1/get-sth", [], [timeout: 60_000, recv_timeout: 60_000]) do
+    case HTTPoison.get("https://#{state[:url]}ct/v1/get-sth", [], [timeout: 10_000, recv_timeout: 10_000]) do
       {:ok, %HTTPoison.Response{status_code: 200} = response} ->
         response.body
-        |> Jason.decode!
-        |> Map.get("tree_size")
+          |> Jason.decode!
+          |> Map.get("tree_size")
 
       {:ok, response} ->
         Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-sth:! Sleeping for a bit and trying again...")
