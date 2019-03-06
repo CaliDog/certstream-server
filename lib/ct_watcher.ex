@@ -4,12 +4,12 @@ defmodule Certstream.CTWatcher do
   use GenServer
 
   @bad_ctl_servers [
-    "alpha.ctlogs.org/", "clicky.ct.letsencrypt.org/", "ct.akamai.com/", "ct.filippo.io/behindthesofa/",
-    "ct.gdca.com.cn/", "ct.izenpe.com/", "ct.izenpe.eus/", "ct.sheca.com/", "ct.startssl.com/", "ct.wosign.com/",
-    "ctserver.cnnic.cn/", "ctlog.api.venafi.com/", "ctlog.gdca.com.cn/", "ctlog.sheca.com/", "ctlog.wosign.com/",
-    "ctlog2.wosign.com/", "flimsy.ct.nordu.net:8080/", "log.certly.io/", "nessie2021.ct.digicert.com/log/",
-    "plausible.ct.nordu.net/", "www.certificatetransparency.cn/ct/", "ct.googleapis.com/testtube/",
-    "ct.googleapis.com/daedalus/"
+    "ct.ws.symantec.com/", "vega.ws.symantec.com/", "deneb.ws.symantec.com/", "sirius.ws.symantec.com/",
+    "log.certly.io/", "ct.izenpe.com/", "ct.izenpe.eus/", "ct.wosign.com/", "ctlog.wosign.com/", "ctlog2.wosign.com/",
+    "ct.gdca.com.cn/", "ctlog.api.venafi.com/", "ctserver.cnnic.cn/", "ct.startssl.com/",
+    "www.certificatetransparency.cn/ct/", "flimsy.ct.nordu.net:8080/", "ctlog.sheca.com/",
+    "log.gdca.com.cn/", "log2.gdca.com.cn/", "ct.sheca.com/", "ct.akamai.com/", "alpha.ctlogs.org/",
+    "clicky.ct.letsencrypt.org/", "ct.filippo.io/behindthesofa/", "ctlog.gdca.com.cn/"
   ]
 
   def child_spec(log) do
