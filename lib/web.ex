@@ -36,7 +36,7 @@ defmodule Certstream.WebsocketServer do
     workers = DynamicSupervisor.which_children(WatcherSupervisor)
       |> Enum.reduce(%{}, fn {:undefined, pid, :worker, _module}, acc ->
           state = :sys.get_state pid
-          Map.put(acc, state[:url], state)
+          Map.put(acc, state[:url], state[:processed_count] || 0)
          end)
 
     response = %{}
