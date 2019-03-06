@@ -75,8 +75,6 @@ defmodule Certstream.CTWatcher do
   def init(state) do
     Logger.info("Worker #{inspect self()} started with url #{state[:url]}.")
 
-    state = Map.put(state, :tree_size, fetch_tree_size(state))
-
     schedule_update()
 
     {:ok, state}
@@ -84,6 +82,14 @@ defmodule Certstream.CTWatcher do
 
   def handle_info(:update, state) do
     Logger.debug("Worker #{inspect self()} got tick.")
+
+    state = case state[:tree_size] do
+      nil ->
+        Logger.info("Worker #{inspect self()} initializing tree size.")
+        Map.put(state, :tree_size, fetch_tree_size(state))
+      _ ->
+        state
+    end
 
     current_size = fetch_tree_size(state)
 
