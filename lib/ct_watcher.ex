@@ -37,7 +37,7 @@ defmodule Certstream.CTWatcher do
 
   defp fetch_all_logs do
     case HTTPoison.get("https://www.gstatic.com/ct/log_list/all_logs_list.json") do
-      {:ok, response} ->
+      {:ok, %HTTPoison.Response{status_code: 200} = response} ->
         ctl_log_info = Jason.decode!(response.body)
 
         ctl_log_info
@@ -46,6 +46,11 @@ defmodule Certstream.CTWatcher do
           |> Enum.map(&(replace_operator(&1, ctl_log_info["operators"])))
           # Filter out any blacklisted CTLs
           |> Enum.filter(&(!Enum.member?(@bad_ctl_servers, &1["url"])))
+
+      {:ok, response} ->
+        Logger.error("Unexpected status code #{response.status_code} fetching url https://www.gstatic.com/ct/log_list/all_logs_list.json! Sleeping for a bit and trying again...")
+        :timer.sleep(:timer.seconds(10))
+        fetch_all_logs()
 
       {:error, %HTTPoison.Error{reason: reason}} ->
         Logger.error("Error: #{reason}! Sleeping for 10 seconds and trying again...")
