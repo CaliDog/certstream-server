@@ -16,7 +16,7 @@ defmodule Certstream.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:honeybadger, :logger],
       mod: {Certstream, []},
     ]
   end
@@ -29,6 +29,7 @@ defmodule Certstream.Mixfile do
       {:pobox, "~> 1.0.2"},
       {:number, "~> 0.5.5"},
       {:easy_ssl, "~> 1.1.0"},
+      {:honeybadger, "~> 0.1"},
       {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: :test}
     ]
