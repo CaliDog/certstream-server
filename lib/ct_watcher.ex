@@ -80,6 +80,12 @@ defmodule Certstream.CTWatcher do
     {:ok, state}
   end
 
+  def handle_info({:ssl_closed, _}, state) do
+    Logger.info("Worker #{inspect self()} got :ssl_closed message. Ignoring.")
+    {:noreply, state}
+  end
+
+
   def handle_info(:update, state) do
     Logger.debug("Worker #{inspect self()} got tick.")
 
