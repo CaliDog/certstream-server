@@ -6,7 +6,7 @@
 
 **Certstream-server** is a service written in elixir to aggregate, parse, and stream certificate data from multiple [certificate transparency logs](https://www.certificate-transparency.org/what-is-ct). It leverages the amazing power of elixir/erlang to achieve great network throughput and concurrency with very little resource usage.
 
-This is a rewrite of the [original version written in python](https://github.com/CaliDog/certstream-server-python), and is much more efficient than the original and currently ships millions of certificates a day on a small heroku instance no problem.
+This is a rewrite of the [original version written in python](https://github.com/CaliDog/certstream-server-python), and is much more efficient than the original and currently ships millions of certificates a day on a small Heroku instance no problem.
 
 ## Getting Started
 
@@ -36,18 +36,18 @@ Alternatively, you can run it in an iex session (so you can interact with it whi
 $ iex -S mix
 ```
 
-This will open up an http/websocket server on port 4000 (override this by setting a `PORT` environment variable). Connecting to it with a websocket client will subscribe you to a live aggregated stream of certificates and heartbeat messages. 
+This will open up an http/websocket server on port 4000 (override this by setting a `PORT` environment variable). Connecting to it with a websocket client will subscribe you to a live aggregated stream of certificates and heartbeat messages.
 
-Connecting over a normal HTTP connection will show the certstream introduction and frontpage. 
+Connecting over a normal HTTP connection will show the certstream introduction and frontpage.
 
 ## Internals
 
-The structure of the application is pretty simple, and is essentially entirely outlined in the [supervisor configuration](https://github.com/CaliDog/certstream-server/blob/master/lib/supervisor.ex#L11-L19). 
+The structure of the application is pretty simple, and is essentially entirely outlined in the [supervisor configuration](https://github.com/CaliDog/certstream-server/blob/master/lib/supervisor.ex#L11-L19).
 
 The dataflow basically looks like this
 
 ```
-               CertifcateBuffer
+               CertificateBuffer
                       |
 HTTP Watcher \        |        / Websocket Connection Process
 HTTP Watcher  - ClientManager -  Websocket Connection Process
@@ -58,13 +58,13 @@ HTTP Watcher /                 \ Websocket Connection Process
 First we spin up 1 process for every entry in the [known CTL list from the CT project](https://www.gstatic.com/ct/log_list/all_logs_list.json), with each of them being responsible for sleeping for 10 seconds and checking to see if the top of the merkle tree has changed. Once a difference has been found, they go out and download the certificate data, parsing it and coercing it to a hashmap structure using [the EasySSL library](https://github.com/CaliDog/EasySSL) and sending it to the ClientManager.
 
 ### ClientManager
-This agent is responsible for brokering communication between the CT watchers and the currently connected websocket clients. Certificates are broadcast to websocket connection processes through an erlang [pobox](https://github.com/ferd/pobox) in order to properly load-shed when a slow client isn't reading certificates fast enough. The ClientManager also sends a copy of every certificate recieved to the CertificateBuffer.
+This agent is responsible for brokering communication between the CT watchers and the currently connected websocket clients. Certificates are broadcast to websocket connection processes through an erlang [pobox](https://github.com/ferd/pobox) in order to properly load-shed when a slow client isn't reading certificates fast enough. The ClientManager also sends a copy of every certificate received to the CertificateBuffer.
 
 ### CertificateBuffer
 This agent is responsible for keeping a ring-buffer in memory of the most recently seen 25 certificates, as well as counting the certificates processed by Certstream.
 
 ### Websocket Connection Process
-Under the hood we use the erlang library [Cowboy](https://github.com/ninenines/cowboy) to handle static content serving, the json APIs, and websocket connections. There's nothing too special about them other than they're assigned a paired pobox at the start of every connection. 
+Under the hood we use the erlang library [Cowboy](https://github.com/ninenines/cowboy) to handle static content serving, the json APIs, and websocket connections. There's nothing too special about them other than they're assigned a paired pobox at the start of every connection.
 
 ## HTTP Routes
 
