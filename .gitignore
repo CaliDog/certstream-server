@@ -25,5 +25,3 @@ erl_crash.dump
 .idea/vcs.xml
 
 *.iml
-
-mix.lock
