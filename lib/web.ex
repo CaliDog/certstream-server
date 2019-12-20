@@ -69,7 +69,7 @@ defmodule Certstream.WebsocketServer do
           :ip_address => req.peer |> elem(0) |> :inet_parse.ntoa |> to_string,
           :headers => req.headers
         },
-        %{:idle_timeout => 12 * 60 * 60 * 1000, :compress => true}
+        %{:compress => true}
       }
     else
       res = :cowboy_req.reply(
