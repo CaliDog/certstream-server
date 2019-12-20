@@ -104,7 +104,7 @@ defmodule Certstream.WebsocketServer do
       Logger.warn("Message drop count greater than 0 -> #{message_drop_count}")
     end
 
-    Logger.debug("Sending client #{length(payload |> List.flatten)} client frames")
+    Logger.debug(fn -> "Sending client #{length(payload |> List.flatten)} client frames" end)
 
     # Reactive our pobox active mode
     :pobox.active(box_pid, fn(msg, _) -> {{:ok, msg}, :nostate} end, :nostate)

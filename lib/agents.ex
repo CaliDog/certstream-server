@@ -131,7 +131,7 @@ defmodule Certstream.ClientManager do
   end
 
   def broadcast_to_clients(entries) do
-    Logger.debug("Broadcasting #{length(entries)} certificates to clients")
+    Logger.debug(fn -> "Broadcasting #{length(entries)} certificates to clients" end)
 
     certificates = entries
       |> Enum.map(&(%{:message_type => "certificate_update", :data => &1}))
