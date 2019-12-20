@@ -9,3 +9,6 @@ config :honeybadger,
        exclude_envs: [:test],
        environment_name: :prod,
        use_logger: true
+
+# Disable connection pooling for HTTP requests
+config :hackney, use_default_pool: false       
