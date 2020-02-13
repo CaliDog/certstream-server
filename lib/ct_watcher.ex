@@ -103,17 +103,47 @@ defmodule Certstream.CTWatcher do
 
     state = case current_size > state[:tree_size] do
       true ->
-        Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_size}].")
-        broadcast_updates(state, current_size)
+        total_updated = process_update(state, current_size)
+        updated_size = state[:tree_size] + total_updated
         state
-          |> Map.put(:tree_size, current_size)
-          |> Map.update(:processed_count, 0, &(&1 + (current_size - state[:tree_size])))
+          |> Map.put(:tree_size, updated_size)
+          |> Map.update(:processed_count, 0, &(&1 + total_updated))
       false -> state
     end
 
     schedule_update()
 
     {:noreply, state}
+  end
+
+  defp process_update(state, current_size, total_updated \\ 0, retry \\ 20)
+
+  defp process_update(state, current_size, total_updated, retry) when retry > 0 do
+    if current_size > state[:tree_size] + total_updated do
+      updated_size = state[:tree_size] + total_updated
+      requested_count = current_size - updated_size
+
+      broadcast_state = state
+        |> Map.put(:tree_size, updated_size)
+
+      updated_count = broadcast_updates(broadcast_state, current_size)
+      Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{updated_count} certificates [#{updated_size} -> #{updated_size + updated_count - 1}].")
+
+      if requested_count > updated_count do
+        Logger.info("Requested #{requested_count} entries but got #{updated_count} entries from https://#{state[:url]}ct/v1/get-entries?start=#{updated_size}&end=#{current_size}.")
+      end
+      Logger.debug(fn -> "Worker #{inspect self()} with url #{state[:url]} processed #{total_updated + updated_count} entries [retry: #{retry}]." end)
+
+      process_update(state, current_size, total_updated + updated_count, retry - 1)
+    else
+      total_updated
+    end
+  end
+
+  defp process_update(state, _, total_updated, retry) when retry == 0 do
+    Logger.debug(fn -> "Worker #{inspect self()} with url #{state[:url]} processed #{total_updated} entries in this time." end)
+
+    total_updated
   end
 
   defp fetch_update(state, start, end_) do
@@ -159,32 +189,29 @@ defmodule Certstream.CTWatcher do
     certificate_count = (current_size - state[:tree_size])
     certificates = Enum.to_list (current_size - certificate_count)..current_size - 1
 
-    certificates
-      |> Enum.chunk_every(64)
-      |> Enum.each(
-           fn ids ->
-             update = fetch_update(state, List.first(ids), List.last(ids))
+    update = fetch_update(state, List.first(certificates), List.last(certificates))
+    entries = update |> Map.get("entries", [])
 
-             update
-               |> Map.get("entries", [])
-               |> Enum.zip(ids)
-               |> Enum.map(fn {entry, cert_index} ->
-                 parsed_entry = Certstream.CTParser.parse_entry(entry)
-                 parsed_entry
-                   |> Map.merge(
-                        %{
-                          :cert_index => cert_index,
-                          :seen => :os.system_time(:microsecond) / 1_000_000,
-                          :source => %{
-                            :url => state[:operator]["url"],
-                            :name => state[:operator]["description"],
-                          },
-                          :cert_link => "http://#{state[:operator]["url"]}ct/v1/get-entries?start=#{cert_index}&end=#{cert_index}"
-                        }
-                      )
-                 end)
-               |> Certstream.ClientManager.broadcast_to_clients
-           end)
+    entries 
+      |> Enum.zip(certificates)
+      |> Enum.map(fn {entry, cert_index} ->
+        parsed_entry = Certstream.CTParser.parse_entry(entry)
+        parsed_entry
+          |> Map.merge(
+            %{
+              :cert_index => cert_index,
+              :seen => :os.system_time(:microsecond) / 1_000_000,
+              :source => %{
+                :url => state[:operator]["url"],
+                :name => state[:operator]["description"],
+              },
+              :cert_link => "http://#{state[:operator]["url"]}ct/v1/get-entries?start=#{cert_index}&end=#{cert_index}"
+            }
+          )
+        end)
+        |> Certstream.ClientManager.broadcast_to_clients
+
+    entries |> Enum.count
   end
 
   defp schedule_update do
