@@ -1,5 +1,4 @@
 require Logger
-require IEx
 
 defmodule Certstream.CTWatcher do
   use GenServer
