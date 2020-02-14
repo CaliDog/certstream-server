@@ -192,7 +192,7 @@ defmodule Certstream.CTWatcher do
     # heuristic. Drop the entires we retrieved and recurse to fetch others.
     if entry_count != batch_count do
       Logger.info("We didn't retrieve all the entries for this batch, fetching missing #{batch_count - entry_count} entries")
-      fetch_and_broadcast_certs(ids |> Enum.drop(Enum.count(entries)), state)
+      fetch_and_broadcast_certs(ids |> Enum.drop(entry_count), state)
     end
   end
 
