@@ -34,8 +34,6 @@ defmodule Certstream.CTWatcher do
          end)
       # Filter out any blacklisted CTLs
       |> Enum.filter(&(!Enum.member?(@bad_ctl_servers, &1["url"])))
-      |> Enum.drop(3)
-      |> Enum.take(1)
       |> Enum.each(fn log ->
            DynamicSupervisor.start_child(supervisor_name, child_spec(log))
          end)
