@@ -75,7 +75,7 @@ defmodule Certstream.WebsocketServer do
       res = :cowboy_req.reply(
         200,
         %{'content_type' => 'text/html'},
-        File.read!("html/dist/index.html"),
+        File.read!("frontend/dist/index.html"),
         req
       )
       {:ok, res, state}
@@ -129,7 +129,7 @@ defmodule Certstream.WebsocketServer do
                 {"/", __MODULE__, []},
                 {"/example.json", __MODULE__, [:example_json]},
                 {"/latest.json", __MODULE__, [:latest_json]},
-                {"/static/[...]", :cowboy_static, {:dir, "html/dist/static/"}},
+                {"/static/[...]", :cowboy_static, {:dir, "frontend/dist/static/"}},
                 {"/#{System.get_env(~s(STATS_URL)) || 'stats'}", __MODULE__, [:stats]}
               ]}
           ])
