@@ -23,13 +23,13 @@ defmodule Certstream.Mixfile do
 
   defp deps do
     [
-      {:httpoison, "~> 1.0"},
-      {:jason, "~> 1.0"},
       {:cowboy, "~> 2.2"},
-      {:pobox, "~> 1.0.2"},
-      {:number, "~> 0.5.5"},
       {:easy_ssl, "~> 1.1.0"},
       {:honeybadger, "~> 0.1"},
+      {:httpoison, "~> 1.0"},
+      {:jason, "~> 1.0"},
+      {:number, "~> 0.5.5"},
+      {:pobox, "~> 1.0.2"},
       {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: :test}
     ]
