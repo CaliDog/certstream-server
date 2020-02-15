@@ -8,23 +8,15 @@ defmodule Certstream.WebsocketServer do
 
   # /example.json handler
   def init(req, [:example_json]) do
-    res = :cowboy_req.reply(
-      200,
-      %{'content_type' => 'application/json'},
-      Certstream.CertifcateBuffer.get_example_json(),
-      req
-    )
+    res = :cowboy_req.reply(200, %{'content_type' => 'application/json'},
+                            Certstream.CertifcateBuffer.get_example_json(), req)
     {:ok, res, %{}}
   end
 
   # /latest.json handler
   def init(req, [:latest_json]) do
-    res = :cowboy_req.reply(
-      200,
-      %{'content_type' => 'application/json'},
-      Certstream.CertifcateBuffer.get_latest_json(),
-      req
-    )
+    res = :cowboy_req.reply(200, %{'content_type' => 'application/json'},
+                            Certstream.CertifcateBuffer.get_latest_json(), req)
     {:ok, res, %{}}
   end
 
