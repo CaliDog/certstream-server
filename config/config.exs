@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :certstream,
+       user_agent: :default  # Defaults to "Certstream Server v{CURRENT_VERSION}"
+
 config :logger,
        level: :info,
        backends: [:console]
@@ -11,4 +14,4 @@ config :honeybadger,
        use_logger: true
 
 # Disable connection pooling for HTTP requests
-config :hackney, use_default_pool: false       
+config :hackney, use_default_pool: false
