@@ -82,7 +82,7 @@ defmodule Certstream.CTWatcher do
     # Go ask for the first 1024 entries
     Logger.info("Sending GET request to #{full_url}")
 
-    user_agent = {"User-Agent", "Certstream Server v#{Application.spec(:certstream, :vsn) |> to_string}"}
+    user_agent = {"User-Agent", user_agent()}
 
     case HTTPoison.get(full_url, [user_agent], options) do
       {:ok, %HTTPoison.Response{status_code: 200} = response} ->
@@ -183,6 +183,14 @@ defmodule Certstream.CTWatcher do
 
   defp schedule_update do
     Process.send_after(self(), :update, :timer.seconds(15)) # In 15 seconds
+  end
+
+  @doc "Allow the user agent to be overridden in the config, or use default"
+  defp user_agent do
+    case Application.fetch_env!(:certstream, :user_agent) do
+      :default -> "Certstream Server v#{Application.spec(:certstream, :vsn)}"
+      user_agent_override -> user_agent_override
+    end
   end
 
 end
