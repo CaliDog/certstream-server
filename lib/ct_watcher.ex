@@ -81,7 +81,10 @@ defmodule Certstream.CTWatcher do
   def http_request_with_retries(full_url, options \\ [timeout: 10_000, recv_timeout: 10_000]) do
     # Go ask for the first 1024 entries
     Logger.info("Sending GET request to #{full_url}")
-    case HTTPoison.get(full_url, [], options) do
+
+    user_agent = {"User-Agent", "Certstream Server v#{Application.spec(:certstream, :vsn) |> to_string}"}
+
+    case HTTPoison.get(full_url, [user_agent], options) do
       {:ok, %HTTPoison.Response{status_code: 200} = response} ->
         response.body
           |> Jason.decode!
@@ -106,7 +109,8 @@ defmodule Certstream.CTWatcher do
   def handle_info(:update, state) do
     Logger.debug(fn -> "Worker #{inspect self()} got tick." end)
 
-    current_size = fetch_tree_size(state)
+    current_size = http_request_with_retries("https://#{state[:url]}ct/v1/get-sth")
+                     |> Map.get("tree_size")
 
     state = case state[:tree_size] do
       nil ->
@@ -131,25 +135,6 @@ defmodule Certstream.CTWatcher do
     schedule_update()
 
     {:noreply, state}
-  end
-
-  defp fetch_tree_size(state) do
-    case HTTPoison.get("https://#{state[:url]}ct/v1/get-sth", [], [timeout: 10_000, recv_timeout: 10_000]) do
-      {:ok, %HTTPoison.Response{status_code: 200} = response} ->
-        response.body
-          |> Jason.decode!
-          |> Map.get("tree_size")
-
-      {:ok, response} ->
-        Logger.error("Unexpected status code #{response.status_code} fetching url https://#{state[:url]}ct/v1/get-sth:! Sleeping for a bit and trying again...")
-        :timer.sleep(10_000)
-        fetch_tree_size(state)
-
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("Error fetching url https://#{state[:url]}ct/v1/get-sth: #{reason}! Sleeping for a bit and trying again...")
-        :timer.sleep(10_000)
-        fetch_tree_size(state)
-    end
   end
 
   defp broadcast_updates(state, current_size) do
