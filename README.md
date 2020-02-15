@@ -1,5 +1,5 @@
 <p align="center">
-    <img align="center" src="https://user-images.githubusercontent.com/1072598/31840406-1fe37936-b59a-11e7-939a-71d36e584fc9.png">
+    <img align="center" src="https://user-images.githubusercontent.com/1072598/31840406-1fe37936-b59a-11e7-939a-71d36e584fc9.png" />
     <h3 align="center">CertStream-Server</h3>
     <p align="center">Aggregate and broadcast SSL certs as they're issued live.</p>
 </p>
@@ -30,10 +30,12 @@ From there you can run it
 $ mix run --no-halt
 ```
 
-Alternatively, you can run it in an iex session (so you can interact with it while it's running)
+Alternatively, you can run it in an iex session (so you can interact with it while it's running) for development
 
 ```
 $ iex -S mix
+Interactive Elixir (1.8.2) - press Ctrl+C to exit (type h() ENTER for help)
+iex(1)> :observer.start
 ```
 
 This will open up an http/websocket server on port 4000 (override this by setting a `PORT` environment variable). Connecting to it with a websocket client will subscribe you to a live aggregated stream of certificates and heartbeat messages.
