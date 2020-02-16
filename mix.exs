@@ -27,7 +27,7 @@ defmodule Certstream.Mixfile do
       {:easy_ssl, "~> 1.1.0"},
       {:honeybadger, "~> 0.1"},
       {:httpoison, "~> 1.0"},
-      {:instruments, "~> 1.1"},
+      {:instruments, git: "https://github.com/discordapp/instruments.git"},
       {:jason, "~> 1.0"},
       {:number, "~> 0.5.5"},
       {:pobox, "~> 1.0.2"},

@@ -145,7 +145,7 @@ defmodule Certstream.CTWatcher do
 
         cert_count = current_tree_size - state[:tree_size]
         Instruments.increment("certstream.worker.#{state[:url]}", cert_count)
-        Instruments.increment("certstream.aggregate_owners.#{state[:operator]["operated_by"]["name"]}", cert_count)
+        Instruments.increment(~s(certstream.aggregate_owners.#{state[:operator]["operated_by"]["name"]}), cert_count)
 
         broadcast_updates(state, current_tree_size)
 
