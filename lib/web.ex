@@ -29,11 +29,12 @@ defmodule Certstream.WebsocketServer do
     processed_certs = Certstream.CertifcateBuffer.get_processed_certificates
     client_json = Certstream.ClientManager.get_clients_json
 
-    workers = DynamicSupervisor.which_children(WatcherSupervisor)
-      |> Enum.reduce(%{}, fn {:undefined, pid, :worker, _module}, acc ->
-          state = :sys.get_state pid
-          Map.put(acc, state[:url], state[:processed_count] || 0)
-         end)
+    workers = WatcherSupervisor
+                |> DynamicSupervisor.which_children
+                |> Enum.reduce(%{}, fn {:undefined, pid, :worker, _module}, acc ->
+                    state = :sys.get_state pid
+                    Map.put(acc, state[:url], state[:processed_count] || 0)
+                   end)
 
     response = %{}
                |> Map.put(:processed_certificates, processed_certs)
