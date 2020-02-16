@@ -1,6 +1,10 @@
 require Logger
 
 defmodule Certstream.ClientManager do
+  @moduledoc """
+  An agent responsible for managing and broadcasting to websocket clients. Uses :pobox to
+  provide buffering and eventually drops messages if the backpressure isn't enough.
+  """
   use Agent
 
   def start_link(_opts) do
@@ -45,8 +49,7 @@ defmodule Certstream.ClientManager do
     Agent.get(__MODULE__, fn state ->
 
       state
-        |> Enum.map(fn {k,v} ->
-
+        |> Enum.map(fn {k, v} ->
           coerced_payload = v
                             |> Map.update!(:connect_time, &DateTime.to_iso8601/1)
                             |> Map.drop([:po_box, :is_websocket])

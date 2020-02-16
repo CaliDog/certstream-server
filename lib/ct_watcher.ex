@@ -1,6 +1,11 @@
 require Logger
 
 defmodule Certstream.CTWatcher do
+  @moduledoc """
+  The GenServer responsible for watching a specific CT server. It ticks every 15 seconds via
+  `schedule_update`, and uses Process.send_after to trigger new requests to see if there are
+  any certificates to fetch and broadcast.
+  """
   use GenServer
 
   @bad_ctl_servers [
@@ -59,21 +64,14 @@ defmodule Certstream.CTWatcher do
   end
 
   def init(state) do
-    Logger.info("Worker #{inspect self()} started with url #{state[:url]}.")
+    # Schedule the initial update to happen between 0 and 3 seconds from now in
+    # order to stagger when we hit these servers and avoid a thundering herd sort
+    # of issue upstream
+    delay = :rand.uniform(30) / 10
 
-    # Attempt to fetch 1024 certificates, and see what the API returns. However
-    # many certs come back is what we should use as the batch size moving forward
-    # (at least in theory).
-    batch_size = http_request_with_retries("https://#{state[:url]}ct/v1/get-entries?start=0&end=1024")
-                   |> Map.get("entries")
-                   |> Enum.count
+    Logger.info("Worker #{inspect self()} started with url #{state[:url]} and initial start time of #{delay} seconds from now.")
 
-    Logger.info("Worker #{inspect self()} found batch size of #{batch_size}.")
-
-    state = state
-              |> Map.put(:batch_size, batch_size)
-
-    schedule_update()
+    schedule_update(delay)
 
     {:ok, state}
   end
@@ -109,26 +107,43 @@ defmodule Certstream.CTWatcher do
   def handle_info(:update, state) do
     Logger.debug(fn -> "Worker #{inspect self()} got tick." end)
 
-    current_size = http_request_with_retries("https://#{state[:url]}ct/v1/get-sth")
+    # On first run attempt to fetch 1024 certificates, and see what the API returns. However
+    # many certs come back is what we should use as the batch size moving forward (at least
+    # in theory).
+    state = case Map.has_key?(state, :batch_size) do
+              true -> state
+              false ->
+                batch_size = "https://#{state[:url]}ct/v1/get-entries?start=0&end=1024"
+                             |> http_request_with_retries
+                             |> Map.get("entries")
+                             |> Enum.count
+
+                Logger.info("Worker #{inspect self()} found batch size of #{batch_size}.")
+
+                Map.put(state, :batch_size, batch_size)
+            end
+
+    current_tree_size = "https://#{state[:url]}ct/v1/get-sth"
+                     |> http_request_with_retries
                      |> Map.get("tree_size")
 
-    state = case state[:tree_size] do
-      nil ->
+    # On first run populate the state[:tree_size] key
+    state = case Map.has_key?(state, :tree_size) do
+      true -> state
+      false ->
         Logger.info("Worker #{inspect self()} initializing tree size.")
-        Map.put(state, :tree_size, current_size)
-      _ ->
-        state
+        Map.put(state, :tree_size, current_tree_size)
     end
 
-    Logger.debug(fn -> "Tree size #{current_size} - #{state[:tree_size]}" end)
+    Logger.debug(fn -> "Tree size #{current_tree_size} - #{state[:tree_size]}" end)
 
-    state = case current_size > state[:tree_size] do
+    state = case current_tree_size > state[:tree_size] do
       true ->
-        Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_size}].")
-        broadcast_updates(state, current_size)
+        Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_tree_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_tree_size}].")
+        broadcast_updates(state, current_tree_size)
         state
-          |> Map.put(:tree_size, current_size)
-          |> Map.update(:processed_count, 0, &(&1 + (current_size - state[:tree_size])))
+          |> Map.put(:tree_size, current_tree_size)
+          |> Map.update(:processed_count, 0, &(&1 + (current_tree_size - state[:tree_size])))
       false -> state
     end
 
@@ -144,18 +159,23 @@ defmodule Certstream.CTWatcher do
     Logger.info("Certificate count - #{certificate_count} ")
     certificates
       |> Enum.chunk_every(state[:batch_size])
-      |> Enum.each(&(fetch_and_broadcast_certs(&1, state)))
+      # Use Task.async_stream to have 5 concurrent requests to the CT server to fetch
+      # our certificates without waiting on the previous chunk.
+      |> Task.async_stream(&(fetch_and_broadcast_certs(&1, state)), max_concurrency: 5)
+      |> Enum.to_list # Nop to just pull the requests through async_stream
   end
 
   def fetch_and_broadcast_certs(ids, state) do
-    Logger.debug("Attempting to retrieve #{ids |> Enum.count} entries")
-    entries = http_request_with_retries("https://#{state[:url]}ct/v1/get-entries?start=#{List.first(ids)}&end=#{List.last(ids)}")
+    Logger.debug(fn -> "Attempting to retrieve #{ids |> Enum.count} entries" end)
+    entries = "https://#{state[:url]}ct/v1/get-entries?start=#{List.first(ids)}&end=#{List.last(ids)}"
+                |> http_request_with_retries
                 |> Map.get("entries", [])
 
     entries
       |> Enum.zip(ids)
       |> Enum.map(fn {entry, cert_index} ->
-        Certstream.CTParser.parse_entry(entry)
+        entry
+          |> Certstream.CTParser.parse_entry
           |> Map.merge(
                %{
                  :cert_index => cert_index,
@@ -176,21 +196,26 @@ defmodule Certstream.CTWatcher do
     # If we have *unequal* counts the API has returned less certificates than our initial batch
     # heuristic. Drop the entires we retrieved and recurse to fetch others.
     if entry_count != batch_count do
-      Logger.info("We didn't retrieve all the entries for this batch, fetching missing #{batch_count - entry_count} entries")
+      Logger.debug(fn ->
+        "We didn't retrieve all the entries for this batch, fetching missing #{batch_count - entry_count} entries"
+      end)
       fetch_and_broadcast_certs(ids |> Enum.drop(Enum.count(entries)), state)
     end
   end
 
-  defp schedule_update do
-    Process.send_after(self(), :update, :timer.seconds(15)) # In 15 seconds
+  defp schedule_update(seconds \\ 10) do # Default to 10 second ticks
+    # Note, we need to use Kernel.trunc() here to guarentee this is an integer
+    # because :timer.seconds returns an integer or a float depending on the
+    # type put in, :erlang.send_after seems to hang with floats for some
+    # reason :(
+    Process.send_after(self(), :update, trunc(:timer.seconds(seconds)))
   end
 
-  @doc "Allow the user agent to be overridden in the config, or use default"
+  # Allow the user agent to be overridden in the config, or use a default Certstream identifier
   defp user_agent do
     case Application.fetch_env!(:certstream, :user_agent) do
       :default -> "Certstream Server v#{Application.spec(:certstream, :vsn)}"
       user_agent_override -> user_agent_override
     end
   end
-
 end
