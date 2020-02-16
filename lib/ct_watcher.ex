@@ -144,8 +144,8 @@ defmodule Certstream.CTWatcher do
         Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_tree_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_tree_size}].")
 
         cert_count = current_tree_size - state[:tree_size]
-        Instruments.increment("certstream.worker.#{state[:url]}", cert_count)
-        Instruments.increment(~s(certstream.aggregate_owners.#{state[:operator]["operated_by"]["name"]}), cert_count)
+        Instruments.increment("certstream.worker", cert_count, tags: ["url:#{state[:url]}"])
+        Instruments.increment("certstream.aggregate_owners_count", cert_count, tags: [~s(owner:#{state[:operator]["operated_by"]["name"]})])
 
         broadcast_updates(state, current_tree_size)
 
