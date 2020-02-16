@@ -57,7 +57,7 @@ defmodule Certstream.CertifcateBuffer do
       fn certificates ->
         certificates
         |> List.first
-        |> Jason.encode!()
+        |> Jason.encode!(pretty: true)
       end
     )
   end
@@ -68,7 +68,7 @@ defmodule Certstream.CertifcateBuffer do
       fn certificates ->
         %{}
         |> Map.put(:messages, certificates)
-        |> Jason.encode!()
+        |> Jason.encode!(pretty: true)
       end
     )
   end
