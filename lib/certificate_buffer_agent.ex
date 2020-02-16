@@ -2,6 +2,7 @@ require Logger
 
 defmodule Certstream.CertifcateBuffer do
   use Agent
+  use Instruments
 
   @moduledoc """
     An agent designed to ring-buffer certificate updates as they come in so the most recent 25 certificates can be
@@ -23,7 +24,10 @@ defmodule Certstream.CertifcateBuffer do
 
   @doc "Adds a certificate update to the circular certificate buffer"
   def add_certs_to_buffer(certificates) do
-    :ets.update_counter(:counter, :processed_certificates, length(certificates))
+    cert_count = length(certificates)
+
+    :ets.update_counter(:counter, :processed_certificates, cert_count)
+    Instruments.increment("certstream.all.processed_certificates", cert_count)
 
     Agent.update(__MODULE__, fn state ->
       state = certificates ++ state

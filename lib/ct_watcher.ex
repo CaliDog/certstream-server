@@ -7,6 +7,7 @@ defmodule Certstream.CTWatcher do
   any certificates to fetch and broadcast.
   """
   use GenServer
+  use Instruments
 
   @bad_ctl_servers [
     "ct.ws.symantec.com/", "vega.ws.symantec.com/", "deneb.ws.symantec.com/", "sirius.ws.symantec.com/",
@@ -141,7 +142,13 @@ defmodule Certstream.CTWatcher do
     state = case current_tree_size > state[:tree_size] do
       true ->
         Logger.info("Worker #{inspect self()} with url #{state[:url]} found #{current_tree_size - state[:tree_size]} certificates [#{state[:tree_size]} -> #{current_tree_size}].")
+
+        cert_count = current_tree_size - state[:tree_size]
+        Instruments.increment("certstream.worker.#{state[:url]}", cert_count)
+        Instruments.increment("certstream.aggregate_owners.#{state[:operator]["operated_by"]["name"]}", cert_count)
+
         broadcast_updates(state, current_tree_size)
+
         state
           |> Map.put(:tree_size, current_tree_size)
           |> Map.update(:processed_count, 0, &(&1 + (current_tree_size - state[:tree_size])))
@@ -162,7 +169,7 @@ defmodule Certstream.CTWatcher do
       |> Enum.chunk_every(state[:batch_size])
       # Use Task.async_stream to have 5 concurrent requests to the CT server to fetch
       # our certificates without waiting on the previous chunk.
-      |> Task.async_stream(&(fetch_and_broadcast_certs(&1, state)), max_concurrency: 5)
+      |> Task.async_stream(&(fetch_and_broadcast_certs(&1, state)), max_concurrency: 5, timeout: :timer.seconds(600))
       |> Enum.to_list # Nop to just pull the requests through async_stream
   end
 
