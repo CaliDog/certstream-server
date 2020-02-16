@@ -35,11 +35,10 @@ defmodule Certstream.CertifcateBuffer do
     end)
   end
 
-  @doc "The number of certificates processed, in human-readable/formatted string output"
+  @doc "The number of certificates processed"
   def get_processed_certificates do
     :ets.lookup(:counter, :processed_certificates)
     |> Keyword.get(:processed_certificates)
-    |> Number.Delimit.number_to_delimited([precision: 0])
   end
 
   @doc "Gets the latest certificate seen by Certstream, indented with 4 spaces"
