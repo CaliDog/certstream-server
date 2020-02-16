@@ -4,7 +4,7 @@ defmodule Certstream.Mixfile do
   def project do
     [
       app: :certstream,
-      version: "1.4.0",
+      version: "1.4.1",
       elixir: "~> 1.6",
       start_permanent: Mix.env == :prod,
       deps: deps(),
