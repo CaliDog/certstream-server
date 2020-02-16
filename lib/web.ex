@@ -1,6 +1,10 @@
 require Logger
 
 defmodule Certstream.WebsocketServer do
+  @moduledoc """
+  The main web services GenServer, responsible for spinning up cowboy and encapsulates
+  all logic for web routes/websockets.
+  """
   use GenServer
 
   # GenServer callback
@@ -25,11 +29,12 @@ defmodule Certstream.WebsocketServer do
     processed_certs = Certstream.CertifcateBuffer.get_processed_certificates
     client_json = Certstream.ClientManager.get_clients_json
 
-    workers = DynamicSupervisor.which_children(WatcherSupervisor)
-      |> Enum.reduce(%{}, fn {:undefined, pid, :worker, _module}, acc ->
-          state = :sys.get_state pid
-          Map.put(acc, state[:url], state[:processed_count] || 0)
-         end)
+    workers = WatcherSupervisor
+                |> DynamicSupervisor.which_children
+                |> Enum.reduce(%{}, fn {:undefined, pid, :worker, _module}, acc ->
+                    state = :sys.get_state pid
+                    Map.put(acc, state[:url], state[:processed_count] || 0)
+                   end)
 
     response = %{}
                |> Map.put(:processed_certificates, processed_certs)
@@ -51,7 +56,7 @@ defmodule Certstream.WebsocketServer do
   def init(req, state) do
     # If we have a websocket request, do the thing, otherwise just host our main HTML
     if Map.has_key?(req.headers, "upgrade") do
-      Logger.debug("New client connected #{inspect req.peer}")
+      Logger.debug(fn -> "New client connected #{inspect req.peer}" end)
       {
         :cowboy_websocket,
         req,
@@ -76,7 +81,7 @@ defmodule Certstream.WebsocketServer do
 
   def terminate(_reason, _partial_req, state) do
     if state[:is_websocket] do
-      Logger.debug("Client disconnected #{inspect state.ip_address}")
+      Logger.debug(fn -> "Client disconnected #{inspect state.ip_address}" end)
       Certstream.ClientManager.remove_client(self())
     end
   end
@@ -87,7 +92,7 @@ defmodule Certstream.WebsocketServer do
   end
 
   def websocket_handle(frame, state) do
-    Logger.debug("Client sent message #{inspect frame}")
+    Logger.debug(fn -> "Client sent message #{inspect frame}" end)
     {:ok, state}
   end
 

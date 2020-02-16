@@ -23,24 +23,11 @@ defmodule Certstream.CertifcateBuffer do
 
   @doc "Adds a certificate update to the circular certificate buffer"
   def add_certs_to_buffer(certificates) do
-    count = :ets.update_counter(:counter, :processed_certificates, length(certificates))
+    :ets.update_counter(:counter, :processed_certificates, length(certificates))
 
-    # Every 10,000 certs let us know.
-    count - length(certificates)..count
-    |> Enum.each(fn c ->
-      if rem(c, 10_000) == 0 do
-        IO.puts "Processed #{c |> Number.Delimit.number_to_delimited([precision: 0])} certificates..."
-      end
-    end)
-
-    certificates |> Enum.each(fn cert ->
-      Agent.update(__MODULE__, fn state ->
-        state = [cert | state]
-        case length(state) do
-          26 -> state |> List.delete_at(-1)
-          _ -> state
-        end
-      end)
+    Agent.update(__MODULE__, fn state ->
+      state = certificates ++ state
+      state |> Enum.take(25)
     end)
   end
 
@@ -57,7 +44,7 @@ defmodule Certstream.CertifcateBuffer do
       fn certificates ->
         certificates
         |> List.first
-        |> Jason.encode!()
+        |> Jason.encode!(pretty: true)
       end
     )
   end
@@ -68,7 +55,7 @@ defmodule Certstream.CertifcateBuffer do
       fn certificates ->
         %{}
         |> Map.put(:messages, certificates)
-        |> Jason.encode!()
+        |> Jason.encode!(pretty: true)
       end
     )
   end

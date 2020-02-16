@@ -1,4 +1,8 @@
 defmodule Certstream do
+  @moduledoc """
+  Certstream is a service for watching CT servers, parsing newly discovered certificates,
+  and broadcasting updates to connected websocket clients.
+  """
   use Application
 
   def start(_type, _args) do
