@@ -8,6 +8,8 @@ defmodule Certstream.CertifcateBuffer do
     aggregated for the /example.json and /latest.json routes.
   """
 
+  @status_update_count 10_000
+
   @doc "Starts the CertificateBuffer agent and creates an ETS table for tracking the certificates processed"
   def start_link(_opts) do
     Logger.info("Starting #{__MODULE__}...")
@@ -23,24 +25,11 @@ defmodule Certstream.CertifcateBuffer do
 
   @doc "Adds a certificate update to the circular certificate buffer"
   def add_certs_to_buffer(certificates) do
-    count = :ets.update_counter(:counter, :processed_certificates, length(certificates))
+    processed_certificates_count = :ets.update_counter(:counter, :processed_certificates, length(certificates))
 
-    # Every 10,000 certs let us know.
-    count - length(certificates)..count
-    |> Enum.each(fn c ->
-      if rem(c, 10_000) == 0 do
-        IO.puts "Processed #{c |> Number.Delimit.number_to_delimited([precision: 0])} certificates..."
-      end
-    end)
-
-    certificates |> Enum.each(fn cert ->
-      Agent.update(__MODULE__, fn state ->
-        state = [cert | state]
-        case length(state) do
-          26 -> state |> List.delete_at(-1)
-          _ -> state
-        end
-      end)
+    Agent.update(__MODULE__, fn state ->
+      state = certificates ++ state
+      state |> Enum.take(25)
     end)
   end
 
