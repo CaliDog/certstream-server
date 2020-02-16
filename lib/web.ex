@@ -6,6 +6,7 @@ defmodule Certstream.WebsocketServer do
   all logic for web routes/websockets.
   """
   use GenServer
+  use Instruments
 
   # GenServer callback
   def init(args) do {:ok, args} end
@@ -69,6 +70,7 @@ defmodule Certstream.WebsocketServer do
         %{:compress => true}
       }
     else
+      Instruments.increment("certstream.index_load", 1, tags: ["ip:#{state[:ip_address]}"])
       res = :cowboy_req.reply(
         200,
         %{'content_type' => 'text/html'},
@@ -81,23 +83,28 @@ defmodule Certstream.WebsocketServer do
 
   def terminate(_reason, _partial_req, state) do
     if state[:is_websocket] do
+      Instruments.increment("certstream.websocket_disconnect", 1, tags: ["ip:#{state[:ip_address]}"])
       Logger.debug(fn -> "Client disconnected #{inspect state.ip_address}" end)
       Certstream.ClientManager.remove_client(self())
     end
   end
 
   def websocket_init(state) do
+    Logger.info("Client connected #{inspect state.ip_address}")
+    Instruments.increment("certstream.websocket_connect", 1, tags: ["ip:#{state[:ip_address]}"])
     Certstream.ClientManager.add_client(self(), state)
     {:ok, state}
   end
 
   def websocket_handle(frame, state) do
     Logger.debug(fn -> "Client sent message #{inspect frame}" end)
+    Instruments.increment("certstream.websocket_msg_in", 1, tags: ["ip:#{state[:ip_address]}"])
     {:ok, state}
   end
 
   def websocket_info({:mail, box_pid, payload, _message_count, message_drop_count}, state) do
     if message_drop_count > 0 do
+      Instruments.increment("certstream.dropped_messages", message_drop_count, tags: ["ip:#{state[:ip_address]}"])
       Logger.warn("Message drop count greater than 0 -> #{message_drop_count}")
     end
 
