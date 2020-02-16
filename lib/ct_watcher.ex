@@ -1,6 +1,11 @@
 require Logger
 
 defmodule Certstream.CTWatcher do
+  @moduledoc """
+  The GenServer responsible for watching a specific CT server. It ticks every 15 seconds via
+  `schedule_update`, and uses Process.send_after to trigger new requests to see if there are
+  any certificates to fetch and broadcast.
+  """
   use GenServer
 
   @bad_ctl_servers [
@@ -148,14 +153,16 @@ defmodule Certstream.CTWatcher do
   end
 
   def fetch_and_broadcast_certs(ids, state) do
-    Logger.debug("Attempting to retrieve #{ids |> Enum.count} entries")
-    entries = http_request_with_retries("https://#{state[:url]}ct/v1/get-entries?start=#{List.first(ids)}&end=#{List.last(ids)}")
+    Logger.debug(fn -> "Attempting to retrieve #{ids |> Enum.count} entries" end)
+    entries = "https://#{state[:url]}ct/v1/get-entries?start=#{List.first(ids)}&end=#{List.last(ids)}"
+                |> http_request_with_retries
                 |> Map.get("entries", [])
 
     entries
       |> Enum.zip(ids)
       |> Enum.map(fn {entry, cert_index} ->
-        Certstream.CTParser.parse_entry(entry)
+        entry
+          |> Certstream.CTParser.parse_entry
           |> Map.merge(
                %{
                  :cert_index => cert_index,
@@ -176,7 +183,9 @@ defmodule Certstream.CTWatcher do
     # If we have *unequal* counts the API has returned less certificates than our initial batch
     # heuristic. Drop the entires we retrieved and recurse to fetch others.
     if entry_count != batch_count do
-      Logger.info("We didn't retrieve all the entries for this batch, fetching missing #{batch_count - entry_count} entries")
+      Logger.debug(fn ->
+        "We didn't retrieve all the entries for this batch, fetching missing #{batch_count - entry_count} entries"
+      end)
       fetch_and_broadcast_certs(ids |> Enum.drop(Enum.count(entries)), state)
     end
   end
@@ -185,7 +194,7 @@ defmodule Certstream.CTWatcher do
     Process.send_after(self(), :update, :timer.seconds(15)) # In 15 seconds
   end
 
-  @doc "Allow the user agent to be overridden in the config, or use default"
+  # Allow the user agent to be overridden in the config, or use a default Certstream identifier
   defp user_agent do
     case Application.fetch_env!(:certstream, :user_agent) do
       :default -> "Certstream Server v#{Application.spec(:certstream, :vsn)}"
