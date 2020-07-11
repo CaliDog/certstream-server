@@ -4,7 +4,7 @@ config :certstream,
        user_agent: :default  # Defaults to "Certstream Server v{CURRENT_VERSION}"
 
 config :logger,
-       level: :info,
+       level: String.to_atom(System.get_env("LOG_LEVEL") || "info"),
        backends: [:console]
 
 config :honeybadger,
