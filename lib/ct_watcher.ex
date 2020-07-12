@@ -9,15 +9,7 @@ defmodule Certstream.CTWatcher do
   use GenServer
   use Instruments
 
-  @bad_ctl_servers [
-    "ct.ws.symantec.com/", "vega.ws.symantec.com/", "deneb.ws.symantec.com/", "sirius.ws.symantec.com/",
-    "log.certly.io/", "ct.izenpe.com/", "ct.izenpe.eus/", "ct.wosign.com/", "ctlog.wosign.com/", "ctlog2.wosign.com/",
-    "ct.gdca.com.cn/", "ctlog.api.venafi.com/", "ctserver.cnnic.cn/", "ct.startssl.com/",
-    "www.certificatetransparency.cn/ct/", "flimsy.ct.nordu.net:8080/", "ctlog.sheca.com/",
-    "log.gdca.com.cn/", "log2.gdca.com.cn/", "ct.sheca.com/", "ct.akamai.com/", "alpha.ctlogs.org/",
-    "clicky.ct.letsencrypt.org/", "ct.filippo.io/behindthesofa/", "ctlog.gdca.com.cn/", "plausible.ct.nordu.net/",
-    "dodo.ct.comodo.com/"
-  ]
+  @default_http_options [timeout: 10_000, recv_timeout: 10_000]
 
   def child_spec(log) do
     %{
@@ -30,7 +22,10 @@ defmodule Certstream.CTWatcher do
   def start_and_link_watchers(name: supervisor_name) do
     Logger.info("Initializing CT Watchers...")
     # Fetch all CT lists
-    ctl_log_info = http_request_with_retries("https://www.gstatic.com/ct/log_list/all_logs_list.json")
+    ctl_log_info = "https://www.gstatic.com/ct/log_list/all_logs_list.json"
+                     |> HTTPoison.get!
+                     |> Map.get(:body)
+                     |> Jason.decode!
 
     ctl_log_info
       |> Map.get("logs")
@@ -38,8 +33,6 @@ defmodule Certstream.CTWatcher do
       |> Enum.map(fn entry ->
            replace_operator(entry, ctl_log_info["operators"])
          end)
-      # Filter out any blacklisted CTLs
-      |> Enum.filter(&(!Enum.member?(@bad_ctl_servers, &1["url"])))
       |> Enum.each(fn log ->
            DynamicSupervisor.start_child(supervisor_name, child_spec(log))
          end)
@@ -73,12 +66,12 @@ defmodule Certstream.CTWatcher do
 
     Logger.info("Worker #{inspect self()} started with url #{state[:url]} and initial start time of #{delay} seconds from now.")
 
-    schedule_update(delay)
+    send(self(), :init)
 
     {:ok, state}
   end
 
-  def http_request_with_retries(full_url, options \\ [timeout: 10_000, recv_timeout: 10_000]) do
+  def http_request_with_retries(full_url, options \\ @default_http_options) do
     # Go ask for the first 1024 entries
     Logger.info("Sending GET request to #{full_url}")
 
@@ -95,7 +88,7 @@ defmodule Certstream.CTWatcher do
         http_request_with_retries(full_url, options)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.error("Error: #{reason}! Sleeping for 10 seconds and trying again...")
+        Logger.error("Error: #{inspect reason} while GETing #{full_url}! Sleeping for 10 seconds and trying again...")
         :timer.sleep(:timer.seconds(10))
         http_request_with_retries(full_url, options)
     end
@@ -106,36 +99,46 @@ defmodule Certstream.CTWatcher do
     {:noreply, state}
   end
 
-  def handle_info(:update, state) do
-    Logger.debug(fn -> "Worker #{inspect self()} got tick." end)
+  def get_tree_size(state) do
+    "https://#{state[:url]}ct/v1/get-sth"
+      |> http_request_with_retries
+      |> Map.get("tree_size")
+  end
 
+  def handle_info(:init, state) do
     # On first run attempt to fetch 1024 certificates, and see what the API returns. However
     # many certs come back is what we should use as the batch size moving forward (at least
     # in theory).
-    state = case Map.has_key?(state, :batch_size) do
-              true -> state
-              false ->
-                batch_size = "https://#{state[:url]}ct/v1/get-entries?start=0&end=1024"
-                             |> http_request_with_retries
-                             |> Map.get("entries")
-                             |> Enum.count
+    state =
+      try do
+        batch_size = "https://#{state[:url]}ct/v1/get-entries?start=0&end=1024"
+                       |> HTTPoison.get!
+                       |> Map.get(:body)
+                       |> Jason.decode!
+                       |> Map.get("entries")
+                       |> Enum.count
 
-                Logger.info("Worker #{inspect self()} found batch size of #{batch_size}.")
+        Logger.info("Worker #{inspect self()} found batch size of #{batch_size}.")
 
-                Map.put(state, :batch_size, batch_size)
-            end
+        state = Map.put(state, :batch_size, batch_size)
 
-    current_tree_size = "https://#{state[:url]}ct/v1/get-sth"
-                     |> http_request_with_retries
-                     |> Map.get("tree_size")
+        # On first run populate the state[:tree_size] key
+        state = Map.put(state, :tree_size, get_tree_size(state))
 
-    # On first run populate the state[:tree_size] key
-    state = case Map.has_key?(state, :tree_size) do
-      true -> state
-      false ->
-        Logger.info("Worker #{inspect self()} initializing tree size.")
-        Map.put(state, :tree_size, current_tree_size)
-    end
+        send(self(), :update)
+
+        state
+      rescue e ->
+        Logger.warn("Worker with state #{inspect state} blew up because #{inspect e}")
+      end
+
+    {:noreply, state}
+  end
+
+  def handle_info(:update, state) do
+    Logger.debug(fn -> "Worker #{inspect self()} got tick." end)
+
+    current_tree_size = get_tree_size(state)
 
     Logger.debug(fn -> "Tree size #{current_tree_size} - #{state[:tree_size]}" end)
 
