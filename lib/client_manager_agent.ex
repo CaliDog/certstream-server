@@ -65,7 +65,7 @@ defmodule Certstream.ClientManager do
     certificates = entries
       |> Enum.map(&(%{:message_type => "certificate_update", :data => &1}))
 
-    Certstream.CertifcateBuffer.add_certs_to_buffer(certificates)
+    Certstream.CertifcateBuffer.add_certs_to_buffer(certificates |> Enum.map(&remove_der_from_certs/1))
 
     serialized_certificates_full = certificates |> Enum.reduce([], fn (cert, acc) ->
       try do
