@@ -67,7 +67,7 @@ defmodule Certstream.ClientManager do
 
     Certstream.CertifcateBuffer.add_certs_to_buffer(certificates)
 
-    serialized_certificates = certificates |> Enum.reduce([], fn (cert, acc) ->
+    serialized_certificates_full = certificates |> Enum.reduce([], fn (cert, acc) ->
       try do
         [Jason.encode!(cert) | acc]
       rescue
@@ -83,10 +83,51 @@ Parsing cert failed - #{inspect e}
       end
     end)
 
+    serialized_certificates_lite = certificates |> Enum.reduce([], fn (cert, acc) ->
+      try do
+        encoded_cert = cert
+                         |> remove_der_from_certs
+                         |> Jason.encode!(cert)
+        [encoded_cert | acc]
+      rescue
+        e in _ ->
+          Logger.error(
+            """
+            Parsing cert failed - #{inspect e}
+            #{inspect cert[:data][:cert_link]}
+            #{inspect cert[:data][:leaf_cert][:as_der]}
+            """
+          )
+          acc
+      end
+    end)
+
     get_clients()
       |> Enum.map(fn {_, v} -> Map.get(v, :po_box) end)
       |> Enum.each(fn boxpid ->
-        :pobox.post(boxpid, serialized_certificates)
+        :pobox.post(boxpid, %{
+          full: serialized_certificates_full,
+          lite: serialized_certificates_lite
+        })
       end)
+  end
+
+  def remove_der_from_certs(certs) do
+    # Clean the der field from the leaf cert
+    certs = certs
+             |> pop_in([:data, :leaf_cert, :as_der])
+             |> elem(1)
+
+    # Clean the der fields from the chain as well
+    certs
+      |> put_in(
+           [:data, :chain],
+           certs[:data][:chain]
+             |> Enum.map(fn chain_cert ->
+                chain_cert
+                  |> Map.delete(:as_der)
+             end)
+         )
+
   end
 end
