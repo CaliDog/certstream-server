@@ -6,13 +6,13 @@
 
 **Certstream-server** is a service written in elixir to aggregate, parse, and stream certificate data from multiple [certificate transparency logs](https://www.certificate-transparency.org/what-is-ct). It leverages the amazing power of elixir/erlang to achieve great network throughput and concurrency with very little resource usage.
 
-This is a rewrite of the [original version written in python](https://github.com/CaliDog/certstream-server-python), and is much more efficient than the original and currently ships millions of certificates a day on a small Heroku instance no problem.
+This is a rewrite of the [original version written in python](https://github.com/CaliDog/certstream-server-python), and is much more efficient than the original and currently ships millions of certificates a day on a single Hetzner dedicated server without issue (\~250TB of data every month!).
 
 ## Getting Started
 
 Getting up and running is pretty easy (especially if you use Heroku, as we include a Dockerfile!).
 
-First install elixir
+First install elixir (assuming you're on OSX, otherwise follow [instructions for your platform]())
 
 ```
 $ brew install elixir
@@ -38,9 +38,15 @@ Interactive Elixir (1.8.2) - press Ctrl+C to exit (type h() ENTER for help)
 iex(1)> :observer.start
 ```
 
-This will open up an http/websocket server on port 4000 (override this by setting a `PORT` environment variable). Connecting to it with a websocket client will subscribe you to a live aggregated stream of certificates and heartbeat messages.
+This will open up an http/websocket server on port 4000 (override this by setting a `PORT` environment variable). 
 
-Connecting over a normal HTTP connection will show the certstream introduction and frontpage.
+## Usage
+
+Once you have the server runing on some port, you can visit the server to be greeted with the index page. 
+
+If you point a websocket client at the root URL (`/`), it'll give you a data structure that doesn't bundle the DER-encoded certificate.
+
+If you want the certificate data as well, you can point a websocket client to `/full-stream` and it'll also bundle the DER-encoded certificate along with each certificate. 
 
 ## Internals
 
