@@ -50,9 +50,7 @@ If you want the certificate data as well, you can point a websocket client to `/
 
 ## Internals
 
-The structure of the application is pretty simple, and is essentially entirely outlined in the [supervisor configuration](https://github.com/CaliDog/certstream-server/blob/master/lib/supervisor.ex#L11-L19).
-
-The dataflow basically looks like this
+The structure of the application is pretty simple. The dataflow basically looks like this:
 
 ```
                CertificateBuffer
