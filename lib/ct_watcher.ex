@@ -72,7 +72,7 @@ defmodule Certstream.CTWatcher do
   end
 
   def http_request_with_retries(full_url, options \\ @default_http_options) do
-    # Go ask for the first 1024 entries
+    # Go ask for the first 512 entries
     Logger.info("Sending GET request to #{full_url}")
 
     user_agent = {"User-Agent", user_agent()}
@@ -106,19 +106,19 @@ defmodule Certstream.CTWatcher do
   end
 
   def handle_info(:init, state) do
-    # On first run attempt to fetch 1024 certificates, and see what the API returns. However
+    # On first run attempt to fetch 512 certificates, and see what the API returns. However
     # many certs come back is what we should use as the batch size moving forward (at least
     # in theory).
     state =
       try do
-        batch_size = "https://#{state[:url]}ct/v1/get-entries?start=0&end=1024"
+        batch_size = "https://#{state[:url]}ct/v1/get-entries?start=0&end=511"
                        |> HTTPoison.get!
                        |> Map.get(:body)
                        |> Jason.decode!
                        |> Map.get("entries")
                        |> Enum.count
 
-        Logger.info("Worker #{inspect self()} found batch size of #{batch_size}.")
+        Logger.info("Worker #{inspect self()} (url=#{state[:url]}) found batch size of #{batch_size}.")
 
         state = Map.put(state, :batch_size, batch_size)
 
