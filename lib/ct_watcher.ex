@@ -118,7 +118,7 @@ defmodule Certstream.CTWatcher do
                        |> Map.get("entries")
                        |> Enum.count
 
-        Logger.info("Worker #{inspect self()} (url=#{state[:url]}) found batch size of #{batch_size}.")
+        Logger.info("Worker #{inspect self()} with url #{state[:url]} found batch size of #{batch_size}.")
 
         state = Map.put(state, :batch_size, batch_size)
 
@@ -129,7 +129,7 @@ defmodule Certstream.CTWatcher do
 
         state
       rescue e ->
-        Logger.warn("Worker with state #{inspect state} blew up because #{inspect e}")
+        Logger.warn("Worker #{inspect self()} with state #{inspect state} blew up because #{inspect e}")
       end
 
     {:noreply, state}
