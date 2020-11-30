@@ -222,17 +222,17 @@ export default {
         'basic': {
           name: 'basic',
           command: 'certstream',
-          video: require('../assets/vid/certstream.mp4')
+          video: 'https://storage.googleapis.com/certstream-artifacts/certstream.mp4'
         },
         'full': {
           name: 'full',
           command: 'certstream --full',
-          video: require('../assets/vid/certstream-full.mp4')
+          video: 'https://storage.googleapis.com/certstream-artifacts/certstream-full.mp4'
         },
         'json': {
           name: 'json',
           command: "certstream --json | jq -r '.data.leaf_cert.all_domains[]'",
-          video: require('../assets/vid/certstream-json.mp4')
+          video: 'https://storage.googleapis.com/certstream-artifacts/certstream-json.mp4'
         }
       },
       heartbeat: heartbeat,
@@ -508,7 +508,7 @@ export default {
             }
         }
 
-        background: url('../assets/img/certstream-bg.png') no-repeat center center fixed;
+        background: url('https://storage.googleapis.com/certstream-artifacts/certstream-bg.png') no-repeat center center fixed;
         background-size: cover;
         background-position-y: 0;
 
