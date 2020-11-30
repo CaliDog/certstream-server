@@ -60,7 +60,9 @@
             </transition-group>
           </div>
           <div class="column raw-content">
-            <pre>{{ activeMessageContent }}</pre>
+            <div class="json-tree-wrapper">
+              <json-tree :data="activeMessage" :level="4"></json-tree>
+            </div>
           </div>
         </template>
       </div>
@@ -74,6 +76,8 @@ import anime from 'animejs'
 import axios from 'axios'
 import debounce from 'debounce'
 
+import JsonTree from 'vue-json-tree'
+
 import RobustWebSocket from 'robust-websocket'
 
 let states = {
@@ -85,6 +89,7 @@ let states = {
 
 export default {
   name: 'feedwatcher',
+  components: {JsonTree},
   data () {
     return {
       messages: [],
@@ -313,7 +318,31 @@ export default {
     .raw-content{
       width: 50%;
       overflow: scroll;
-      background: whitesmoke;
+      background: #333;
+      padding: 0;
+      .json-tree{
+        font-size: .9rem !important;
+      }
+      .json-tree-root{
+        border-radius: 0;
+        margin: 0;
+        background: #333;
+        color: #ECF0F1;
+        min-width: 0;
+        .json-tree-paired, .json-tree-row:hover{
+          background-color: #3e3e3e;
+        }
+        .json-tree{
+          color: #ECF0F1;
+          .json-tree-value-number{
+            color: #1E82C8;
+          }
+          .json-tree-value-string{
+            color: #c66c66;
+          }
+        }
+
+      }
     }
 
     &.slide-toggle-enter, &.slide-toggle-leave-active {
