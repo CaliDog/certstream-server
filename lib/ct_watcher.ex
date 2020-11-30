@@ -9,7 +9,7 @@ defmodule Certstream.CTWatcher do
   use GenServer
   use Instruments
 
-  @default_http_options [timeout: 10_000, recv_timeout: 10_000]
+  @default_http_options [timeout: 10_000, recv_timeout: 10_000, ssl: [{:versions, [:'tlsv1.2']}]]
 
   def child_spec(log) do
     %{
@@ -23,7 +23,7 @@ defmodule Certstream.CTWatcher do
     Logger.info("Initializing CT Watchers...")
     # Fetch all CT lists
     ctl_log_info = "https://www.gstatic.com/ct/log_list/all_logs_list.json"
-                     |> HTTPoison.get!
+                     |> HTTPoison.get!([], @default_http_options)
                      |> Map.get(:body)
                      |> Jason.decode!
 
