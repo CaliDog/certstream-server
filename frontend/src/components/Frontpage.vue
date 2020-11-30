@@ -83,7 +83,7 @@
                                     </div>
                                 </div>
                                 <div class="typer-wrapper">
-                                    <p :class="{active: activeLanguage !== null && activeLanguage != 'java'}" class="content typer-content">
+                                    <p :class="{active: activeLanguage !== null && activeLanguage !== 'java'}" class="content typer-content">
                                         <span class="dollar">$</span>
                                         <span class="typer"></span>
                                         <span ref="clipboard" @click="showToolTip" @mouseleave="hideToolTip" v-tooltip.top-center="{content: 'Copied to your clipboard!', trigger: 'manual', hide: 1000}" class="copy">
@@ -103,17 +103,17 @@
                                 <div class="columns demo-gifs">
                                     <div class="column">
                                         <div class="columns demo-selector-wrapper">
-                                            <div :class="{active: activeDemo.name == 'basic'}" @mouseover="setActiveDemo('basic')" class="column">
+                                            <div :class="{active: activeDemo.name === 'basic'}" @mouseover="setActiveDemo('basic')" class="column">
                                                 <div class="demo-selector">
                                                     <p>Basic output</p>
                                                 </div>
                                             </div>
-                                            <div :class="{active: activeDemo.name == 'full'}" @mouseover="setActiveDemo('full')" class="column">
+                                            <div :class="{active: activeDemo.name === 'full'}" @mouseover="setActiveDemo('full')" class="column">
                                                 <div class="demo-selector">
                                                     <p>Full SAN output</p>
                                                 </div>
                                             </div>
-                                            <div :class="{active: activeDemo.name == 'json'}" @mouseover="setActiveDemo('json')" class="column">
+                                            <div :class="{active: activeDemo.name === 'json'}" @mouseover="setActiveDemo('json')" class="column">
                                                 <div class="demo-selector">
                                                     <p>JSON output mode + JQ</p>
                                                 </div>
@@ -126,7 +126,7 @@
                                                 </p>
                                             </div>
                                             <div class="section-wrapper">
-                                                <img @click="showExampleModal('basic')" class="demo-gif" :src="activeDemo.image">
+                                              <video autoplay muted loop controls class="demo-video" :src="activeDemo.video"></video>
                                             </div>
                                         </div>
                                     </div>
@@ -138,7 +138,6 @@
             </div>
         </section>
 
-        <!-- <data-structures></data-structures> -->
         <section class="section data-structures">
             <div class="container has-text-centered data-structures-content">
                 <p class="title">SIMPLE(ISH) DATA</p>
@@ -147,7 +146,7 @@
                         <div class="column subsection-wrapper heartbeat-subsection">
                             <h2 class="small-title">Heartbeat Messsages</h2>
                             <div class="json-tree-wrapper">
-                                <json-tree :data="heartbeat" :level="4"></json-tree>
+                                <json-tree class="tree-display" :data="heartbeat" :level="4"></json-tree>
                             </div>
                         </div>
                     </div>
@@ -156,7 +155,7 @@
                             <h2 class="small-title">Certificate Update</h2>
                             <p>If you prefer the raw data blob, there's a live example <a target="_blank" href="/example.json">here</a></p>
                             <div class="json-tree-wrapper">
-                                <json-tree :data="exampleMessage" :level="4"></json-tree>
+                                <json-tree class="tree-display" :data="exampleMessage" :level="4"></json-tree>
                             </div>
                         </div>
                     </div>
@@ -167,8 +166,7 @@
         <section class="section footer">
             <div class="container has-text-centered">
                 <div class="container has-text-centered">
-                    <img class="doghead" src="../assets/img/doghead.png">
-                    <p>Made with love by Cali Dog Security</p>
+                    <a href="https://calidog.io/" target="_blank"><img class="doghead" src="../assets/img/doghead.png"></a>
                     <span class="icons">
                         <a target="_blank" href="https://medium.com/cali-dog-security">
                             <i class="fab fa-medium-m" aria-hidden="true"></i>
@@ -177,7 +175,7 @@
                             <i class="fab fa-github" aria-hidden="true"></i>
                         </a>
                     </span>
-                    <p>© {{ currentYear }} Cali Dog Security</p>
+                  <p>© {{ currentYear }} Made with love by <a class="footer-link" href="https://calidog.io/" target="_blank">Cali Dog Security</a></p>
                 </div>
             </div>
         </section>
@@ -224,17 +222,17 @@ export default {
         'basic': {
           name: 'basic',
           command: 'certstream',
-          image: require('../assets/img/demo1.gif')
+          video: require('../assets/vid/certstream.mp4')
         },
         'full': {
           name: 'full',
           command: 'certstream --full',
-          image: require('../assets/img/demo2.gif')
+          video: require('../assets/vid/certstream-full.mp4')
         },
         'json': {
           name: 'json',
-          command: "certstream --json | jq -r '.data | [.source.url, (.cert_index|tostring), .leaf_cert.subject.aggregated] | join(\",\")'",
-          image: require('../assets/img/demo3.gif')
+          command: "certstream --json | jq -r '.data.leaf_cert.all_domains[]'",
+          video: require('../assets/vid/certstream-json.mp4')
         }
       },
       heartbeat: heartbeat,
@@ -382,10 +380,9 @@ export default {
             padding-right: 0 !important;
             padding-left: 0 !important;
         }
-
     }
 
-        .footer{
+    .footer{
         color: #555555;
         background: #D7E7D4;
         font-weight: 700;
@@ -393,6 +390,10 @@ export default {
         .doghead{
             width: 111px;
             margin: 10px;
+        }
+        a.footer-link {
+          color: #555555;
+          border-bottom: 1px solid #555555;
         }
         .icons{
             font-size: 26px;
@@ -438,6 +439,12 @@ export default {
                 height: 100%;
                 max-height: 100%;
                 border-radius: 4px;
+            }
+            .demo-video{
+                border-radius: 15px;
+                &:focus {
+                    outline: none;
+                }
             }
 
             .demo-data-wrapper{

@@ -23,7 +23,7 @@ h1, h2, h3, h4, h5, p {
   width: auto;
 }
 
-.json-tree{
+.json-tree.tree-display{
   color:#394359;
   display:flex;
   flex-direction:column;
