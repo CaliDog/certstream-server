@@ -99,7 +99,8 @@ export default {
       activeMessage: null,
       fullscreenMessageViewer: false,
       timerActive: false,
-      ws: null
+      ws: null,
+      pingTimer: null
     }
   },
   created () {
@@ -132,7 +133,9 @@ export default {
         this.timerActive = false
         this.state = states.STATE_DISCONNECTED
         console.log('Disconnecting from certstream...')
+        clearInterval(this.pingTimer)
         this.ws.close()
+        this.ws = null
         this.messages = []
         return
       }
@@ -152,6 +155,12 @@ export default {
       this.ws.addEventListener('open', () => {
         console.log('Connected to Certstream...')
         this.state = states.STATE_CONNECTED
+
+        this.pingTimer = setInterval(() => {
+          if (this.ws) {
+            this.ws.send('ping')
+          }
+        }, 5000)
       })
 
       this.ws.addEventListener('error', (e) => {
