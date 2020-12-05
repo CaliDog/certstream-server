@@ -7,6 +7,9 @@ defmodule Certstream.ClientManager do
   """
   use Agent
 
+  @full_stream_url Application.fetch_env!(:certstream, :full_stream_url)
+  @domains_only_url Application.fetch_env!(:certstream, :domains_only_url)
+
   def start_link(_opts) do
     Logger.info("Starting #{__MODULE__}...")
     Agent.start_link(fn -> %{} end, name: __MODULE__)
@@ -73,11 +76,11 @@ defmodule Certstream.ClientManager do
       rescue
         e in _ ->
           Logger.error(
-"""
-Parsing cert failed - #{inspect e}
-#{inspect cert[:data][:cert_link]}
-#{inspect cert[:data][:leaf_cert][:as_der]}
-"""
+            """
+            Parsing cert failed - #{inspect e}
+            #{inspect cert[:data][:cert_link]}
+            #{inspect cert[:data][:leaf_cert][:as_der]}
+            """
           )
           acc
       end
@@ -102,14 +105,39 @@ Parsing cert failed - #{inspect e}
       end
     end)
 
+    dns_entries_only = certificates |> Enum.reduce([], fn (cert, acc) ->
+      try do
+        encoded_cert = %{:message_type => "dns_entries", :data => cert.data.leaf_cert.all_domains}
+                         |> Jason.encode!(cert)
+        [encoded_cert | acc]
+      rescue
+        e in _ ->
+          Logger.error(
+            """
+            Parsing cert failed - #{inspect e}
+            #{inspect cert[:data][:cert_link]}
+            #{inspect cert[:data][:leaf_cert][:as_der]}
+            """
+          )
+          acc
+      end
+    end)
+
     get_clients()
-      |> Enum.map(fn {_, v} -> Map.get(v, :po_box) end)
-      |> Enum.each(fn boxpid ->
-        :pobox.post(boxpid, %{
-          full: serialized_certificates_full,
-          lite: serialized_certificates_lite
-        })
+      |> Enum.each(fn {_, client_state} ->
+        IO.inspect(client_state.po_box)
+        case client_state.path do
+          @full_stream_url ->         send_bundle(serialized_certificates_full, client_state.po_box)
+          @full_stream_url <> "/" ->  send_bundle(serialized_certificates_full, client_state.po_box)
+          @domains_only_url ->        send_bundle(dns_entries_only, client_state.po_box)
+          @domains_only_url <> "/" -> send_bundle(dns_entries_only, client_state.po_box)
+          _ ->                        send_bundle(serialized_certificates_lite, client_state.po_box)
+        end
       end)
+  end
+
+  def send_bundle(entries, po_box) do
+    :pobox.post(po_box, entries)
   end
 
   def remove_der_from_certs(certs) do

@@ -8,7 +8,9 @@ defmodule Certstream.WebsocketServer do
   use GenServer
   use Instruments
 
-  @full_stream_url "/full-stream"
+
+  @full_stream_url Application.fetch_env!(:certstream, :full_stream_url)
+  @domains_only_url Application.fetch_env!(:certstream, :domains_only_url)
 
   # GenServer callback
   def init(args) do {:ok, args} end
@@ -106,26 +108,18 @@ defmodule Certstream.WebsocketServer do
   end
 
   def websocket_info({:mail, box_pid, serialized_certificates, _message_count, message_drop_count}, state) do
+    Logger.warn("Inside po recv")
     if message_drop_count > 0 do
       Instruments.increment("certstream.dropped_messages", message_drop_count, tags: ["ip:#{state[:ip_address]}"])
       Logger.warn("Message drop count greater than 0 -> #{message_drop_count}")
     end
 
-    payload = serialized_certificates
-                |> Enum.map(fn serialized_cert ->
-                  case state[:path] do
-                    @full_stream_url -> serialized_cert[:full]
-                    @full_stream_url <> "/" -> serialized_cert[:full]
-                    _ -> serialized_cert[:lite]
-                  end
-                end)
-
-    Logger.debug(fn -> "Sending client #{length(payload |> List.flatten)} client frames" end)
+    Logger.debug(fn -> "Sending client #{length(serialized_certificates |> List.flatten)} client frames" end)
 
     # Reactive our pobox active mode
     :pobox.active(box_pid, fn(msg, _) -> {{:ok, msg}, :nostate} end, :nostate)
 
-    response = payload
+    response = serialized_certificates
                  |> Enum.map(fn message ->
                     message
                     |> Enum.map(&({:text, &1}))
@@ -151,6 +145,7 @@ defmodule Certstream.WebsocketServer do
               [
                 {"/", __MODULE__, []},
                 {@full_stream_url, __MODULE__, []},
+                {@domains_only_url, __MODULE__, []},
                 {"/example.json", __MODULE__, [:example_json]},
                 {"/latest.json", __MODULE__, [:latest_json]},
                 {"/static/[...]", :cowboy_static, {:dir, "frontend/dist/static/"}},

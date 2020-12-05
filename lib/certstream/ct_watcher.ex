@@ -94,15 +94,15 @@ defmodule Certstream.CTWatcher do
     end
   end
 
-  def handle_info({:ssl_closed, _}, state) do
-    Logger.info("Worker #{inspect self()} got :ssl_closed message. Ignoring.")
-    {:noreply, state}
-  end
-
   def get_tree_size(state) do
     "https://#{state[:url]}ct/v1/get-sth"
       |> http_request_with_retries
       |> Map.get("tree_size")
+  end
+
+  def handle_info({:ssl_closed, _}, state) do
+    Logger.info("Worker #{inspect self()} got :ssl_closed message. Ignoring.")
+    {:noreply, state}
   end
 
   def handle_info(:init, state) do
