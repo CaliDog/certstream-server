@@ -108,7 +108,6 @@ defmodule Certstream.WebsocketServer do
   end
 
   def websocket_info({:mail, box_pid, serialized_certificates, _message_count, message_drop_count}, state) do
-    Logger.warn("Inside po recv")
     if message_drop_count > 0 do
       Instruments.increment("certstream.dropped_messages", message_drop_count, tags: ["ip:#{state[:ip_address]}"])
       Logger.warn("Message drop count greater than 0 -> #{message_drop_count}")
