@@ -125,7 +125,6 @@ defmodule Certstream.ClientManager do
 
     get_clients()
       |> Enum.each(fn {_, client_state} ->
-        IO.inspect(client_state.po_box)
         case client_state.path do
           @full_stream_url ->         send_bundle(serialized_certificates_full, client_state.po_box)
           @full_stream_url <> "/" ->  send_bundle(serialized_certificates_full, client_state.po_box)
