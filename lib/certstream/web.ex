@@ -17,14 +17,14 @@ defmodule Certstream.WebsocketServer do
 
   # /example.json handler
   def init(req, [:example_json]) do
-    res = :cowboy_req.reply(200, %{'content_type' => 'application/json'},
+    res = :cowboy_req.reply(200, %{'content-type' => 'application/json'},
                             Certstream.CertifcateBuffer.get_example_json(), req)
     {:ok, res, %{}}
   end
 
   # /latest.json handler
   def init(req, [:latest_json]) do
-    res = :cowboy_req.reply(200, %{'content_type' => 'application/json'},
+    res = :cowboy_req.reply(200, %{'content-type' => 'application/json'},
                             Certstream.CertifcateBuffer.get_latest_json(), req)
     {:ok, res, %{}}
   end
@@ -50,7 +50,7 @@ defmodule Certstream.WebsocketServer do
 
     res = :cowboy_req.reply(
       200,
-      %{'content_type' => 'application/json'},
+      %{'content-type' => 'application/json'},
       response,
       req
     )
@@ -78,7 +78,7 @@ defmodule Certstream.WebsocketServer do
       Instruments.increment("certstream.index_load", 1, tags: ["ip:#{state[:ip_address]}"])
       res = :cowboy_req.reply(
         200,
-        %{'content_type' => 'text/html'},
+        %{'content-type' => 'text/html'},
         File.read!("frontend/dist/index.html"),
         req
       )
