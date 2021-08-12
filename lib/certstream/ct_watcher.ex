@@ -9,7 +9,7 @@ defmodule Certstream.CTWatcher do
   use GenServer
   use Instruments
 
-  @default_http_options [timeout: 10_000, recv_timeout: 10_000, ssl: [{:versions, [:'tlsv1.2']}]]
+  @default_http_options [timeout: 10_000, recv_timeout: 10_000, ssl: [{:versions, [:'tlsv1.2']}], follow_redirect: true]
 
   def child_spec(log) do
     %{
@@ -112,7 +112,7 @@ defmodule Certstream.CTWatcher do
     state =
       try do
         batch_size = "https://#{state[:url]}ct/v1/get-entries?start=0&end=511"
-                       |> HTTPoison.get!
+                       |> HTTPoison.get!([], @default_http_options)
                        |> Map.get(:body)
                        |> Jason.decode!
                        |> Map.get("entries")
