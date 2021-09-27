@@ -132,28 +132,49 @@ defmodule Certstream.WebsocketServer do
     }
   end
 
+  defp routes do
+    [
+      {"/", __MODULE__, []},
+      {@full_stream_url, __MODULE__, []},
+      {@domains_only_url, __MODULE__, []},
+      {"/example.json", __MODULE__, [:example_json]},
+      {"/latest.json", __MODULE__, [:latest_json]},
+      {"/static/[...]", :cowboy_static, {:dir, "frontend/dist/static/"}},
+      {"/#{System.get_env(~s(STATS_URL)) || 'stats'}", __MODULE__, [:stats]}
+    ]
+  end
+
   def start_link(_opts) do
     Logger.info("Starting web server on port #{get_port()}...")
-    :cowboy.start_clear(
-      :websocket_server,
-      [{:port, get_port()}],
-      %{
-        :env => %{
-          :dispatch => :cowboy_router.compile([
-            {:_,
-              [
-                {"/", __MODULE__, []},
-                {@full_stream_url, __MODULE__, []},
-                {@domains_only_url, __MODULE__, []},
-                {"/example.json", __MODULE__, [:example_json]},
-                {"/latest.json", __MODULE__, [:latest_json]},
-                {"/static/[...]", :cowboy_static, {:dir, "frontend/dist/static/"}},
-                {"/#{System.get_env(~s(STATS_URL)) || 'stats'}", __MODULE__, [:stats]}
-              ]}
-          ])
-        },
-      }
-    )
+    case System.get_env("SSL_ENABLED") do
+      nil ->
+        :cowboy.start_clear(
+          :websocket_server,
+          [{:port, get_port()}],
+          %{
+            :env => %{
+              :dispatch => :cowboy_router.compile([
+                {:_, routes()}
+              ])
+            },
+          }
+        )
+      _ -> :cowboy.start_tls(
+          :websocket_server,
+          [
+            port: get_port(),
+            keyfile: System.get_env("SSL_KEY"),
+            certfile: System.get_env("SSL_CERT")
+          ],
+          %{
+            :env => %{
+              :dispatch => :cowboy_router.compile([
+                {:_, routes()}
+              ])
+            },
+          }
+        )
+    end
 
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
