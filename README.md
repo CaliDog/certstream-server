@@ -13,6 +13,8 @@ This is a rewrite of the [original version written in python](https://github.com
 Getting up and running is pretty easy (especially if you use Heroku, as we include a Dockerfile!).
 
 First install elixir (assuming you're on OSX, otherwise follow [instructions for your platform](https://elixir-lang.org/install.html))
+On Linux you need also have erlang development libraries installed, it is `erlang-dev` package in Debian based distributions.
+
 
 ```
 $ brew install elixir
