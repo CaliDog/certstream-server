@@ -185,7 +185,7 @@ defmodule Certstream.CTWatcher do
                    :url => state[:operator]["url"],
                    :name => state[:operator]["description"],
                  },
-                 :cert_link => "http://#{state[:operator]["url"]}ct/v1/get-entries?start=#{cert_index}&end=#{cert_index}"
+                 :cert_link => "#{state[:operator]["url"]}ct/v1/get-entries?start=#{cert_index}&end=#{cert_index}"
                }
              )
       end)
