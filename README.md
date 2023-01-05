@@ -61,7 +61,7 @@ HTTP Watcher /                 \ Websocket Connection Process
 
 ```
 ### HTTP Watchers
-First we spin up 1 process for every entry in the [known CTL list from the CT project](https://www.gstatic.com/ct/log_list/all_logs_list.json), with each of them being responsible for sleeping for 10 seconds and checking to see if the top of the merkle tree has changed. Once a difference has been found, they go out and download the certificate data, parsing it and coercing it to a hashmap structure using [the EasySSL library](https://github.com/CaliDog/EasySSL) and sending it to the ClientManager.
+First we spin up 1 process for every entry in the [known CTL list from the CT project](https://www.gstatic.com/ct/log_list/v3/all_logs_list.json), with each of them being responsible for sleeping for 10 seconds and checking to see if the top of the merkle tree has changed. Once a difference has been found, they go out and download the certificate data, parsing it and coercing it to a hashmap structure using [the EasySSL library](https://github.com/CaliDog/EasySSL) and sending it to the ClientManager.
 
 ### ClientManager
 This agent is responsible for brokering communication between the CT watchers and the currently connected websocket clients. Certificates are broadcast to websocket connection processes through an erlang [pobox](https://github.com/ferd/pobox) in order to properly load-shed when a slow client isn't reading certificates fast enough. The ClientManager also sends a copy of every certificate received to the CertificateBuffer.
