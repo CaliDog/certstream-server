@@ -8,18 +8,24 @@
     <div class="columns connect-button">
       <div class="column">
         <template v-if="state === states.STATE_DISCONNECTED">
-          <a class="button" @click="connectWebsockets">
-            OPEN THE FIRE HOSE
-          </a>
+          <a class="button" @click="connectWebsockets"> OPEN THE FIRE HOSE </a>
         </template>
         <template v-else-if="state === states.STATE_CONNECTING">
-          <a class="button connecting">
-            CONNECTING...
-          </a>
+          <a class="button connecting"> CONNECTING... </a>
         </template>
         <template v-else-if="state === states.STATE_CONNECTED">
           <a class="button connected" @click="connectWebsockets">
-            CONNECTED. CLICK TO DISCONNECT <p class="heart-icon"><i v-tooltip.top-center="{content: 'Beats when a heartbeat is received'}" class="fa fa-heart" aria-hidden="true"></i>️</p>
+            CONNECTED. CLICK TO DISCONNECT
+            <p class="heart-icon">
+              <i
+                v-tooltip.top-center="{
+                  content: 'Beats when a heartbeat is received'
+                }"
+                class="fa fa-heart"
+                aria-hidden="true"
+              ></i
+              >️
+            </p>
           </a>
         </template>
         <template v-else-if="state === states.STATE_ERROR">
@@ -30,12 +36,14 @@
       </div>
     </div>
     <transition name="slide-toggle">
-      <div v-if="state !== states.STATE_DISCONNECTED" :class="{fullscreen: fullscreenMessageViewer}" class="columns message-holder">
+      <div
+        v-if="state !== states.STATE_DISCONNECTED"
+        :class="{ fullscreen: fullscreenMessageViewer }"
+        class="columns message-holder"
+      >
         <template v-if="messages.length === 0">
           <div class="column holder-column">
-              <p class="empty-holder">
-                Waiting on certificates...<span class="wave">🌊</span>
-              </p>
+            <p class="empty-holder">Waiting on certificates...<span class="wave">🌊</span></p>
           </div>
         </template>
         <template v-else>
@@ -44,17 +52,15 @@
             <i class="fa fa-compress-alt" aria-hidden="true" v-else></i>
           </div>
           <div class="column incoming-list">
-            <transition-group
-                    name="custom-classes-transition"
-                    enter-active-class="animated fadeIn"
-            >
+            <transition-group name="custom-classes-transition" enter-active-class="animated fadeIn">
               <div v-bind:key="message.data.seen" v-for="message in messages">
                 <p
-                   v-on:mouseover="toggleActiveMessage(message)"
-                   :class="{active: message.active}"
-                   class="line"
+                  v-on:mouseover="toggleActiveMessage(message)"
+                  :class="{ active: message.active }"
+                  class="line"
                 >
-                  [{{message.data.cert_index }}] {{ message.data.source.url }} - {{ message.data.leaf_cert.subject.CN }}
+                  [{{ message.data.cert_index }}] {{ message.data.source.url }} -
+                  {{ message.data.leaf_cert.subject.CN }}
                 </p>
               </div>
             </transition-group>
@@ -68,33 +74,32 @@
       </div>
     </transition>
   </section>
-
 </template>
 
 <script>
-import anime from 'animejs'
-import axios from 'axios'
-import debounce from 'debounce'
+import anime from "animejs"
+import axios from "axios"
+import debounce from "debounce"
 
-import JsonTree from 'vue-json-tree'
+import JsonTree from "vue-json-tree"
 
-import RobustWebSocket from 'robust-websocket'
+import RobustWebSocket from "robust-websocket"
 
 let states = {
-  STATE_DISCONNECTED: 'DISCONNECTED',
-  STATE_CONNECTING: 'CONNECTING',
-  STATE_CONNECTED: 'CONNECTED',
-  STATE_ERROR: 'ERROR'
+  STATE_DISCONNECTED: "DISCONNECTED",
+  STATE_CONNECTING: "CONNECTING",
+  STATE_CONNECTED: "CONNECTED",
+  STATE_ERROR: "ERROR"
 }
 
 export default {
-  name: 'feedwatcher',
-  components: {JsonTree},
-  data () {
+  name: "feedwatcher",
+  components: { JsonTree },
+  data() {
     return {
       messages: [],
       latest: [],
-      state: 'DISCONNECTED',
+      state: "DISCONNECTED",
       states: states,
       activeMessage: null,
       fullscreenMessageViewer: false,
@@ -103,36 +108,35 @@ export default {
       pingTimer: null
     }
   },
-  created () {
+  created() {
     let vm = this
-    axios.get('/latest.json')
-      .then(function (response) {
-        vm.latest = response.data
-      })
+    axios.get("/latest.json").then(function (response) {
+      vm.latest = response.data
+    })
   },
   methods: {
-    beat () {
+    beat() {
       anime({
-        targets: '.heart-icon',
+        targets: ".heart-icon",
         scale: [
-          {value: 1.25, duration: 250},
-          {value: 1, duration: 250}
+          { value: 1.25, duration: 250 },
+          { value: 1, duration: 250 }
         ],
         color: [
-          {value: '#e74c3c', duration: 250},
-          {value: '#ECF0F1', duration: 250}
+          { value: "#e74c3c", duration: 250 },
+          { value: "#ECF0F1", duration: 250 }
         ],
         elasticity: 500,
-        easing: 'linear'
+        easing: "linear"
       })
     },
-    connectWebsockets () {
+    connectWebsockets() {
       let vm = this
 
       if (this.state === states.STATE_CONNECTED) {
         this.timerActive = false
         this.state = states.STATE_DISCONNECTED
-        console.log('Disconnecting from certstream...')
+        console.log("Disconnecting from certstream...")
         clearInterval(this.pingTimer)
         this.ws.close()
         this.ws = null
@@ -142,47 +146,50 @@ export default {
 
       this.state = states.STATE_CONNECTING
 
-      console.log('Connecting to Certstream...')
+      console.log("Connecting to Certstream...")
 
-      if (location.protocol === 'https:') {
-        this.ws = new RobustWebSocket('wss://' + location.host + '/')
+      if (location.protocol === "https:") {
+        this.ws = new RobustWebSocket("wss://" + location.host + "/")
       } else {
-        this.ws = new RobustWebSocket('ws://' + location.host + '/')
+        this.ws = new RobustWebSocket("ws://" + location.host + "/")
       }
 
       this.ws.debug = true
 
-      this.ws.addEventListener('open', () => {
-        console.log('Connected to Certstream...')
+      this.ws.addEventListener("open", () => {
+        console.log("Connected to Certstream...")
         this.state = states.STATE_CONNECTED
 
         this.pingTimer = setInterval(() => {
           if (this.ws) {
-            this.ws.send('ping')
+            this.ws.send("ping")
           }
         }, 5000)
       })
 
-      this.ws.addEventListener('error', (e) => {
-        console.log('onerror called...', e)
+      this.ws.addEventListener("error", (e) => {
+        console.log("onerror called...", e)
         this.state = states.STATE_ERROR
       })
 
-      this.ws.addEventListener('message', debounce((message) => {
-        let parsedMessage = JSON.parse(message.data)
+      this.ws.addEventListener(
+        "message",
+        debounce((message) => {
+          let parsedMessage = JSON.parse(message.data)
 
-        if (parsedMessage.message_type === 'heartbeat') {
-          this.beat()
-        } else {
-          this.timerActive = false
-          this.messages.unshift(parsedMessage)
-          if (this.messages.length > 1000) {
-            this.messages.pop()
+          if (parsedMessage.message_type === "heartbeat") {
+            this.beat()
+          } else {
+            this.timerActive = false
+            this.messages.unshift(parsedMessage)
+            if (this.messages.length > 1000) {
+              this.messages.pop()
+            }
           }
-        }
-      }, 100))
+        }, 100)
+      )
 
-      function seedMessages () {
+      function seedMessages() {
         let message = vm.latest.messages.shift()
         if (!message || !vm.timerActive) {
           return
@@ -194,25 +201,25 @@ export default {
       this.timerActive = true
       setTimeout(seedMessages, 2500)
     },
-    toggleActiveMessage (message) {
+    toggleActiveMessage(message) {
       if (this.activeMessage) {
         this.activeMessage.active = false
       }
       message.active = true
       this.activeMessage = message
     },
-    toggleFullscreen () {
+    toggleFullscreen() {
       this.fullscreenMessageViewer = !this.fullscreenMessageViewer
       if (this.fullscreenMessageViewer) {
-        this.$scrollTo('.message-holder', 500)
+        this.$scrollTo(".message-holder", 500)
       }
-      document.documentElement.classList.toggle('scroll-disabled')
+      document.documentElement.classList.toggle("scroll-disabled")
     }
   },
   computed: {
     activeMessageContent: function () {
       if (!this.activeMessage) {
-        return 'Hover over a message on  the left!'
+        return "Hover over a message on  the left!"
       }
       return JSON.stringify(this.activeMessage, null, 2)
     }
@@ -221,257 +228,318 @@ export default {
 </script>
 
 <style lang="scss">
-  html.scroll-disabled{
-    overflow: hidden;
+html.scroll-disabled {
+  overflow: hidden;
+}
+.line {
+  color: #ecf0f1;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  padding: 0 4px;
+  cursor: default;
+  &.active {
+    border: 1px solid white;
   }
-  .line {
-    color: #ECF0F1;
-    border: 1px solid transparent;
-    transition: all .15s;
-    padding: 0 4px;
-    cursor: default;
-    &.active{
-      border: 1px solid white;
-    }
-  }
+}
 
-  .connect-button {
-    a.button {
-      transition: all 1s, box-shadow .2s, top .2s, background .25s;
-      box-shadow: 0 4px hsla(206, 67%, 35%, 1);
-      border: none !important;
-      top: 0;
+.connect-button {
+  a.button {
+    transition:
+      all 1s,
+      box-shadow 0.2s,
+      top 0.2s,
+      background 0.25s;
+    box-shadow: 0 4px hsla(206, 67%, 35%, 1);
+    border: none !important;
+    top: 0;
+    &:hover {
+      top: 2px;
+      box-shadow: 0 2px hsla(206, 67%, 35%, 1);
+    }
+    &:active {
+      top: 4px;
+      box-shadow: 0 0 hsla(206, 67%, 35%, 1);
+    }
+    &.connecting {
+      background: rgba(26, 175, 93, 0.5);
+      box-shadow: 0 4px hsla(128, 37%, 35%, 0.5);
       &:hover {
-        top: 2px;
-        box-shadow: 0 2px hsla(206, 67%, 35%, 1);
+        box-shadow: 0 2px hsla(128, 37%, 35%, 0.5);
       }
-      &:active{
-        top: 4px;
-        box-shadow: 0 0 hsla(206, 67%, 35%, 1);
-      }
-      &.connecting{
-        background: rgba(26,175,93,0.50);
-        box-shadow: 0 4px hsla(128, 37%, 35%, 0.50);
-        &:hover{
-          box-shadow: 0 2px hsla(128, 37%, 35%, 0.50);
-        }
-        &:active{
-          box-shadow: 0 0 hsla(128, 37%, 35%, 0.50);
-        }
-      }
-      &.connected{
-        background: #1AAF5D;
-        box-shadow: 0 4px hsla(128, 37%, 35%, 1);
-        &:hover{
-          box-shadow: 0 2px hsla(128, 37%, 35%, 1);
-        }
-        &:active{
-          box-shadow: 0 0 hsla(128, 37%, 35%, 1);
-        }
-      }
-      &.error{
-        background: #e74c3c;
+      &:active {
+        box-shadow: 0 0 hsla(128, 37%, 35%, 0.5);
       }
     }
-    .heart-icon {
-      padding-left: 10px;
+    &.connected {
+      background: #1aaf5d;
+      box-shadow: 0 4px hsla(128, 37%, 35%, 1);
+      &:hover {
+        box-shadow: 0 2px hsla(128, 37%, 35%, 1);
+      }
+      &:active {
+        box-shadow: 0 0 hsla(128, 37%, 35%, 1);
+      }
+    }
+    &.error {
+      background: #e74c3c;
+    }
+  }
+  .heart-icon {
+    padding-left: 10px;
+    i {
+      padding-top: 2px;
+    }
+  }
+}
+
+.message-holder {
+  height: 75vh;
+  transition:
+    height 0.5s,
+    width 0.5s;
+  width: calc(100vw - 200px);
+  margin-bottom: 50px !important;
+  background: #2e3032;
+  overflow: hidden;
+  position: relative;
+  &.fullscreen {
+    width: 100vw;
+    height: 100vh;
+    .full-screen-button:hover {
       i {
-        padding-top: 2px;
+        font-size: 16px;
       }
     }
   }
 
-  .message-holder {
-    height: 75vh;
-    transition: height .5s, width .5s;
-    width: calc(100vw - 200px);
-    margin-bottom: 50px !important;
-    background: #2E3032;
-    overflow: hidden;
-    position: relative;
-    &.fullscreen{
-      width: 100vw;
-      height: 100vh;
-      .full-screen-button:hover{
-        i{
-          font-size: 16px;
-        }
+  .full-screen-button {
+    height: 50px;
+    width: 50px;
+    top: 0;
+    right: 0;
+    position: absolute;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    i {
+      font-size: 21px;
+      transition: all 0.25s;
+    }
+    &:hover {
+      i {
+        font-size: 26px;
       }
     }
+  }
 
-    .full-screen-button{
-      height: 50px;
-      width: 50px;
-      top: 0;
-      right: 0;
-      position: absolute;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      i{
-        font-size: 21px;
-        transition: all .25s;
-      }
-      &:hover{
-        i{
-          font-size: 26px;
-        }
-      }
+  .incoming-list {
+    overflow: scroll;
+  }
+
+  .raw-content {
+    width: 50%;
+    overflow: scroll;
+    background: #333;
+    padding: 0;
+    .json-tree {
+      font-size: 0.9rem !important;
     }
-
-    .incoming-list {
-      overflow: scroll;
-    }
-
-    .raw-content{
-      width: 50%;
-      overflow: scroll;
+    .json-tree-root {
+      border-radius: 0;
+      margin: 0;
       background: #333;
-      padding: 0;
-      .json-tree{
-        font-size: .9rem !important;
+      color: #ecf0f1;
+      min-width: 0;
+      .json-tree-paired,
+      .json-tree-row:hover {
+        background-color: #3e3e3e;
       }
-      .json-tree-root{
-        border-radius: 0;
-        margin: 0;
-        background: #333;
-        color: #ECF0F1;
-        min-width: 0;
-        .json-tree-paired, .json-tree-row:hover{
-          background-color: #3e3e3e;
-        }
-        .json-tree{
-          color: #ECF0F1;
-          .json-tree-value-number{
-            color: #1E82C8;
-          }
-          .json-tree-value-string{
-            color: #c66c66;
-          }
-        }
-
-      }
-    }
-
-    &.slide-toggle-enter, &.slide-toggle-leave-active {
-      height: 0;
-      p.empty-holder{
-        opacity: 0;
-        transition: opacity 1.5s;
-      }
-    }
-
-    .holder-column {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-
-      .empty-holder {
-        font-size: 24px;
-        font-weight: 700;
+      .json-tree {
         color: #ecf0f1;
-        opacity: 1;
-        transition: opacity 2.5s;
-
-        .wave {
-          font-size: 30px;
-          margin-right: 10px;
+        .json-tree-value-number {
+          color: #1e82c8;
+        }
+        .json-tree-value-string {
+          color: #c66c66;
         }
       }
     }
   }
 
-  .tooltip {
-    display: block !important;
-    z-index: 10000;
-    font-family: 'Open Sans', sans-serif;
-    .tooltip-inner {
-      background: #333;
-      color: white;
-      border-radius: 16px;
-      padding: 7px 12px;
+  &.slide-toggle-enter,
+  &.slide-toggle-leave-active {
+    height: 0;
+    p.empty-holder {
+      opacity: 0;
+      transition: opacity 1.5s;
     }
+  }
+
+  .holder-column {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .empty-holder {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ecf0f1;
+      opacity: 1;
+      transition: opacity 2.5s;
+
+      .wave {
+        font-size: 30px;
+        margin-right: 10px;
+      }
+    }
+  }
+}
+
+.tooltip {
+  display: block !important;
+  z-index: 10000;
+  font-family: "Open Sans", sans-serif;
+  .tooltip-inner {
+    background: #333;
+    color: white;
+    border-radius: 16px;
+    padding: 7px 12px;
+  }
+
+  .tooltip-arrow {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    position: absolute;
+    margin: 5px;
+    border-color: #333;
+  }
+
+  &[x-placement^="top"] {
+    margin-bottom: 5px;
 
     .tooltip-arrow {
-      width: 0;
-      height: 0;
-      border-style: solid;
-      position: absolute;
-      margin: 5px;
-      border-color: #333;
-    }
-
-    &[x-placement^="top"] {
-      margin-bottom: 5px;
-
-      .tooltip-arrow {
-        border-width: 5px 5px 0 5px;
-        border-left-color: transparent !important;
-        border-right-color: transparent !important;
-        border-bottom-color: transparent !important;
-        bottom: -5px;
-        left: calc(50% - 5px);
-        margin-top: 0;
-        margin-bottom: 0;
-      }
-    }
-
-    &[x-placement^="bottom"] {
-      margin-top: 5px;
-
-      .tooltip-arrow {
-        border-width: 0 5px 5px 5px;
-        border-left-color: transparent !important;
-        border-right-color: transparent !important;
-        border-top-color: transparent !important;
-        top: -5px;
-        left: calc(50% - 5px);
-        margin-top: 0;
-        margin-bottom: 0;
-      }
-    }
-
-    &[x-placement^="right"] {
-      margin-left: 5px;
-
-      .tooltip-arrow {
-        border-width: 5px 5px 5px 0;
-        border-left-color: transparent !important;
-        border-top-color: transparent !important;
-        border-bottom-color: transparent !important;
-        left: -5px;
-        top: calc(50% - 5px);
-        margin-left: 0;
-        margin-right: 0;
-      }
-    }
-
-    &[x-placement^="left"] {
-      margin-right: 5px;
-
-      .tooltip-arrow {
-        border-width: 5px 0 5px 5px;
-        border-top-color: transparent !important;
-        border-right-color: transparent !important;
-        border-bottom-color: transparent !important;
-        right: -5px;
-        top: calc(50% - 5px);
-        margin-left: 0;
-        margin-right: 0;
-      }
-    }
-
-    &[aria-hidden='true'] {
-      visibility: hidden;
-      opacity: 0;
-      transition: opacity .15s, visibility .15s;
-    }
-
-    &[aria-hidden='false'] {
-      visibility: visible;
-      opacity: 1;
-      transition: opacity .15s;
+      border-width: 5px 5px 0 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-bottom-color: transparent !important;
+      bottom: -5px;
+      left: calc(50% - 5px);
+      margin-top: 0;
+      margin-bottom: 0;
     }
   }
+
+  &[x-placement^="bottom"] {
+    margin-top: 5px;
+
+    .tooltip-arrow {
+      border-width: 0 5px 5px 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-top-color: transparent !important;
+      top: -5px;
+      left: calc(50% - 5px);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+
+  &[x-placement^="right"] {
+    margin-left: 5px;
+
+    .tooltip-arrow {
+      border-width: 5px 5px 5px 0;
+      border-left-color: transparent !important;
+      border-top-color: transparent !important;
+      border-bottom-color: transparent !important;
+      left: -5px;
+      top: calc(50% - 5px);
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
+  &[x-placement^="left"] {
+    margin-right: 5px;
+
+    .tooltip-arrow {
+      border-width: 5px 0 5px 5px;
+      border-top-color: transparent !important;
+      border-right-color: transparent !important;
+      border-bottom-color: transparent !important;
+      right: -5px;
+      top: calc(50% - 5px);
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
+  &[aria-hidden="true"] {
+    visibility: hidden;
+    opacity: 0;
+    transition:
+      opacity 0.15s,
+      visibility 0.15s;
+  }
+
+  &[aria-hidden="false"] {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity 0.15s;
+  }
+}
+
+.json-tree.tree-display {
+  color: #394359;
+  display: flex;
+  flex-direction: column;
+  font-family: Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 20px;
+  .json-tree-root {
+    background-color: #f7f8f9;
+    border-radius: 3px;
+    margin: 2px 0;
+    min-width: 560px;
+    padding: 10px;
+  }
+  .json-tree-ending,
+  .json-tree-row {
+    border-radius: 2px;
+    display: flex;
+  }
+  .json-tree-paired,
+  .json-tree-row:hover {
+    background-color: #bce2ff;
+  }
+  .json-tree-expando {
+    cursor: pointer;
+  }
+  .json-tree-sign {
+    font-weight: 700;
+  }
+  .json-tree-collapsed {
+    color: gray;
+    font-style: italic;
+  }
+  .json-tree-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .json-tree-value-string {
+    color: #9aab3a;
+  }
+  .json-tree-value-boolean {
+    color: #ff0080;
+  }
+  .json-tree-value-number {
+    color: #4f7096;
+  }
+  .json-tree-value-null {
+    color: #c7444a;
+  }
+}
 </style>
