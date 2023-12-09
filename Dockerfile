@@ -1,3 +1,15 @@
+# Frontend build
+FROM node:20-alpine3.18 as build
+
+WORKDIR /opt/app
+
+COPY frontend ./frontend
+
+WORKDIR /opt/app/frontend
+
+RUN npm install && npm run build && rm -rf node_modules
+
+# Main build
 FROM elixir:1.8-alpine
 
 WORKDIR /opt/app
@@ -16,7 +28,7 @@ ADD mix.lock ./
 
 RUN mix do deps.get, deps.compile
 
-COPY frontend/dist/ /opt/app/frontend/dist/
+COPY --from=build /opt/app/frontend ./frontend
 COPY config/ /opt/app/config/
 
 COPY lib /opt/app/lib/
