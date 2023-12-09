@@ -3,21 +3,22 @@
     <section class="section top-panel">
       <div class="container">
         <div class="columns">
-          <div class="column"></div>
+          <div class="column" />
           <div class="column splash">
-            <h1 class="title animated fadeInDown">CERTSTREAM</h1>
+            <h1 class="title animated fadeInDown">
+              CERTSTREAM
+            </h1>
             <h2 class="subtitle animated fadeIn slow delayed">
               Real-time
-              <a href="https://www.certificate-transparency.org/what-is-ct"
-                >certificate transparency log</a
-              >
+              <a href="https://www.certificate-transparency.org/what-is-ct">certificate transparency log</a>
               update stream.
-              <br />
+              <br>
               See SSL certificates as they're issued in real time.
             </h2>
-            <a @click="scrollDown" class="button learn-more animated fadeIn slow delayed"
-              >Learn More</a
-            >
+            <a
+              class="button learn-more animated fadeIn slow delayed"
+              @click="scrollDown"
+            >Learn More</a>
           </div>
         </div>
       </div>
@@ -28,46 +29,62 @@
       class="transition"
       src="../assets/img/rolling-transition.png"
       alt="rolling-transition"
-    />
+    >
 
     <!-- <intro-panel></intro-panel> -->
-    <section class="section intro-panel" id="intro-panel">
+    <section
+      id="intro-panel"
+      class="section intro-panel"
+    >
       <div class="container has-text-centered">
         <div class="columns">
           <div class="column has-text-centered">
-            <img class="overview" src="../assets/img/certstream-overview.png" />
+            <img
+              class="overview"
+              src="../assets/img/certstream-overview.png"
+            >
           </div>
           <div class="column right-column">
-            <p class="title">TL;DR</p>
+            <p class="title">
+              TL;DR
+            </p>
             <p class="content">
               CertStream is an intelligence feed that gives you real-time updates from the
-              <a href="https://www.certificate-transparency.org/what-is-ct"
-                >Certificate Transparency Log network</a
-              >, allowing you to use it as a building block to make tools that react to new
+              <a href="https://www.certificate-transparency.org/what-is-ct">Certificate Transparency Log network</a>, allowing you to use it as a building block to make tools that react to new
               certificates being issued in real time. We do all the hard work of watching,
               aggregating, and parsing the transparency logs, and give you super simple libraries
-              that enable you to do awesome things with minimal effort. <br /><br />
+              that enable you to do awesome things with minimal effort. <br><br>
               It's our way of saying "thank you" to the amazing security community in general, as
               well as a good way to give people a taste of the sort of intelligence feeds that are
               powering our flagship product -
-              <a href="https://phishfinder.io" target="_blank">PhishFinder</a>.
+              <a
+                href="https://phishfinder.io"
+                target="_blank"
+              >PhishFinder</a>.
             </p>
           </div>
         </div>
       </div>
     </section>
 
-    <feed-watcher></feed-watcher>
+    <feed-watcher />
 
     <!-- <get-started-panel></get-started-panel> -->
     <section class="section get-started-panel">
       <div class="container has-text-centered get-started-content">
-        <p class="title">GET STARTED</p>
+        <p class="title">
+          GET STARTED
+        </p>
         <div class="container has-text-centered">
           <div class="columns">
             <div class="column">
               <div class="content-section">
-                <h2 id="install" class="small-title">Install CertStream</h2>
+                <h2
+                  id="install"
+                  class="small-title"
+                >
+                  Install CertStream
+                </h2>
                 <p class="white-text">
                   CertStream is hosted
                   <a href="https://github.com/search?q=org%3ACaliDog+certstream">on Github</a>
@@ -77,9 +94,7 @@
                   <a href="https://github.com/CaliDog/certstream-go">Go</a>, and
                   <a href="https://github.com/CaliDog/certstream-java">Java</a>. These libraries are
                   intended to lower the barrier of entry to interacting with the
-                  <a href="https://www.certificate-transparency.org/what-is-ct"
-                    >Certificate Transparency Log</a
-                  >
+                  <a href="https://www.certificate-transparency.org/what-is-ct">Certificate Transparency Log</a>
                   network so you can craft simple but powerful analytics tools with just a few lines
                   of code!
                 </p>
@@ -92,10 +107,11 @@
                     <i
                       :class="{ colored: activeLanguage === 'python' }"
                       class="devicon-python-plain"
-                    ></i>
-                    <a target="_blank" href="https://github.com/CaliDog/certstream-python"
-                      >Python</a
-                    >
+                    />
+                    <a
+                      target="_blank"
+                      href="https://github.com/CaliDog/certstream-python"
+                    >Python</a>
                   </div>
 
                   <div
@@ -106,10 +122,11 @@
                     <i
                       :class="{ colored: activeLanguage === 'javascript' }"
                       class="devicon-javascript-plain"
-                    ></i>
-                    <a target="_blank" href="https://github.com/CaliDog/certstream-js"
-                      >JavaScript</a
-                    >
+                    />
+                    <a
+                      target="_blank"
+                      href="https://github.com/CaliDog/certstream-js"
+                    >JavaScript</a>
                   </div>
 
                   <div
@@ -117,8 +134,14 @@
                     :class="{ active: activeLanguage === 'go' }"
                     @mouseover="setLanguage('go')"
                   >
-                    <i :class="{ colored: activeLanguage === 'go' }" class="devicon-go-plain"></i>
-                    <a target="_blank" href="https://github.com/CaliDog/certstream-go">Go</a>
+                    <i
+                      :class="{ colored: activeLanguage === 'go' }"
+                      class="devicon-go-plain"
+                    />
+                    <a
+                      target="_blank"
+                      href="https://github.com/CaliDog/certstream-go"
+                    >Go</a>
                   </div>
 
                   <div
@@ -129,8 +152,11 @@
                     <i
                       :class="{ colored: activeLanguage === 'java' }"
                       class="devicon-java-plain"
-                    ></i>
-                    <a target="_blank" href="https://github.com/CaliDog/certstream-java">Java</a>
+                    />
+                    <a
+                      target="_blank"
+                      href="https://github.com/CaliDog/certstream-java"
+                    >Java</a>
                   </div>
                 </div>
                 <div class="typer-wrapper">
@@ -141,25 +167,33 @@
                     class="content typer-content"
                   >
                     <span class="dollar">$</span>
-                    <span class="typer"></span>
+                    <span class="typer" />
                     <span
                       ref="clipboard"
-                      @click="showToolTip"
-                      @mouseleave="hideToolTip"
                       v-tooltip.top-center="{
                         content: 'Copied to your clipboard!',
                         trigger: 'manual',
                         hide: 1000
                       }"
                       class="copy"
+                      @click="showToolTip"
+                      @mouseleave="hideToolTip"
                     >
-                      <i class="fa fa-clipboard" aria-hidden="true"></i>
+                      <i
+                        class="fa fa-clipboard"
+                        aria-hidden="true"
+                      />
                     </span>
                   </p>
                 </div>
               </div>
               <div class="content-section cli-example">
-                <h2 id="cli" class="small-title">CertStream CLI</h2>
+                <h2
+                  id="cli"
+                  class="small-title"
+                >
+                  CertStream CLI
+                </h2>
 
                 <p class="white-text">
                   Installing the CLI is easy, all you have to do is
@@ -175,8 +209,8 @@
                     <div class="columns demo-selector-wrapper">
                       <div
                         :class="{ active: activeDemo.name === 'basic' }"
-                        @mouseover="setActiveDemo('basic')"
                         class="column"
+                        @mouseover="setActiveDemo('basic')"
                       >
                         <div class="demo-selector">
                           <p>Basic output</p>
@@ -184,8 +218,8 @@
                       </div>
                       <div
                         :class="{ active: activeDemo.name === 'full' }"
-                        @mouseover="setActiveDemo('full')"
                         class="column"
+                        @mouseover="setActiveDemo('full')"
                       >
                         <div class="demo-selector">
                           <p>Full SAN output</p>
@@ -193,8 +227,8 @@
                       </div>
                       <div
                         :class="{ active: activeDemo.name === 'json' }"
-                        @mouseover="setActiveDemo('json')"
                         class="column"
+                        @mouseover="setActiveDemo('json')"
                       >
                         <div class="demo-selector">
                           <p>JSON output mode + JQ</p>
@@ -205,7 +239,7 @@
                       <div class="command-wrapper">
                         <p class="content typer-content">
                           <span class="dollar">$</span>
-                          <span class="demo-typer"></span>
+                          <span class="demo-typer" />
                         </p>
                       </div>
                       <div class="section-wrapper">
@@ -216,7 +250,7 @@
                           controls
                           class="demo-video"
                           :src="activeDemo.video"
-                        ></video>
+                        />
                       </div>
                     </div>
                   </div>
@@ -230,25 +264,42 @@
 
     <section class="section data-structures">
       <div class="container has-text-centered data-structures-content">
-        <p class="title">SIMPLE(ISH) DATA</p>
+        <p class="title">
+          SIMPLE(ISH) DATA
+        </p>
         <div class="container has-text-centered">
           <div class="columns">
             <div class="column subsection-wrapper heartbeat-subsection">
-              <h2 class="small-title">Heartbeat Messsages</h2>
+              <h2 class="small-title">
+                Heartbeat Messsages
+              </h2>
               <div class="json-tree-wrapper">
-                <json-tree class="tree-display" :data="heartbeat" :level="4"></json-tree>
+                <json-tree
+                  class="tree-display"
+                  :data="heartbeat"
+                  :level="4"
+                />
               </div>
             </div>
           </div>
           <div class="columns">
             <div class="column subsection-wrapper update-subsection">
-              <h2 class="small-title">Certificate Update</h2>
+              <h2 class="small-title">
+                Certificate Update
+              </h2>
               <p>
                 If you prefer the raw data blob, there's a live example
-                <a target="_blank" href="/example.json">here</a>
+                <a
+                  target="_blank"
+                  href="/example.json"
+                >here</a>
               </p>
               <div class="json-tree-wrapper">
-                <json-tree class="tree-display" :data="exampleMessage" :level="4"></json-tree>
+                <json-tree
+                  class="tree-display"
+                  :data="exampleMessage"
+                  :level="4"
+                />
               </div>
             </div>
           </div>
@@ -259,20 +310,40 @@
     <section class="section footer">
       <div class="container has-text-centered">
         <div class="container has-text-centered">
-          <a href="https://calidog.io/" target="_blank"
-            ><img class="doghead" src="../assets/img/doghead.png"
-          /></a>
+          <a
+            href="https://calidog.io/"
+            target="_blank"
+          ><img
+            class="doghead"
+            src="../assets/img/doghead.png"
+          ></a>
           <span class="icons">
-            <a target="_blank" href="https://medium.com/cali-dog-security">
-              <i class="fab fa-medium-m" aria-hidden="true"></i>
+            <a
+              target="_blank"
+              href="https://medium.com/cali-dog-security"
+            >
+              <i
+                class="fab fa-medium-m"
+                aria-hidden="true"
+              />
             </a>
-            <a target="_blank" href="https://github.com/calidog">
-              <i class="fab fa-github" aria-hidden="true"></i>
+            <a
+              target="_blank"
+              href="https://github.com/calidog"
+            >
+              <i
+                class="fab fa-github"
+                aria-hidden="true"
+              />
             </a>
           </span>
           <p>
             © {{ currentYear }} Made with love by
-            <a class="footer-link" href="https://calidog.io/" target="_blank">Cali Dog Security</a>
+            <a
+              class="footer-link"
+              href="https://calidog.io/"
+              target="_blank"
+            >Cali Dog Security</a>
           </p>
         </div>
       </div>
@@ -296,7 +367,11 @@ let heartbeat = {
 import exampleMessage from "@/assets/example.json"
 
 export default {
-  name: "frontpage",
+  name: "Frontpage",
+  components: {
+    FeedWatcher,
+    JsonTree
+  },
   data() {
     return {
       activeLanguage: null,
@@ -336,6 +411,11 @@ export default {
       },
       heartbeat: heartbeat,
       exampleMessage: exampleMessage
+    }
+  },
+  computed: {
+    currentYear() {
+      return new Date().getFullYear()
     }
   },
   mounted() {
@@ -404,15 +484,6 @@ export default {
           document.body.removeChild(textarea)
         }
       }
-    }
-  },
-  components: {
-    FeedWatcher,
-    JsonTree
-  },
-  computed: {
-    currentYear() {
-      return new Date().getFullYear()
     }
   }
 }

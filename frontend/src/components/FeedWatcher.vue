@@ -1,5 +1,8 @@
 <template>
-  <section id="demo" class="section demo-panel">
+  <section
+    id="demo"
+    class="section demo-panel"
+  >
     <div class="columns call-to-action">
       <div class="column">
         <p>TRY IT!</p>
@@ -8,13 +11,19 @@
     <div class="columns connect-button">
       <div class="column">
         <template v-if="state === states.STATE_DISCONNECTED">
-          <a class="button" @click="connectWebsockets"> OPEN THE FIRE HOSE </a>
+          <a
+            class="button"
+            @click="connectWebsockets"
+          > OPEN THE FIRE HOSE </a>
         </template>
         <template v-else-if="state === states.STATE_CONNECTING">
           <a class="button connecting"> CONNECTING... </a>
         </template>
         <template v-else-if="state === states.STATE_CONNECTED">
-          <a class="button connected" @click="connectWebsockets">
+          <a
+            class="button connected"
+            @click="connectWebsockets"
+          >
             CONNECTED. CLICK TO DISCONNECT
             <p class="heart-icon">
               <i
@@ -23,13 +32,15 @@
                 }"
                 class="fa fa-heart"
                 aria-hidden="true"
-              ></i
-              >️
+              />️
             </p>
           </a>
         </template>
         <template v-else-if="state === states.STATE_ERROR">
-          <a class="button error" @click="connectWebsockets">
+          <a
+            class="button error"
+            @click="connectWebsockets"
+          >
             ERROR CONNECTING! CLICK TO TRY AGAIN.
           </a>
         </template>
@@ -43,21 +54,40 @@
       >
         <template v-if="messages.length === 0">
           <div class="column holder-column">
-            <p class="empty-holder">Waiting on certificates...<span class="wave">🌊</span></p>
+            <p class="empty-holder">
+              Waiting on certificates...<span class="wave">🌊</span>
+            </p>
           </div>
         </template>
         <template v-else>
-          <div @click="toggleFullscreen" class="full-screen-button">
-            <i v-if="!fullscreenMessageViewer" class="fa fa-expand-alt" aria-hidden="true"></i>
-            <i class="fa fa-compress-alt" aria-hidden="true" v-else></i>
+          <div
+            class="full-screen-button"
+            @click="toggleFullscreen"
+          >
+            <i
+              v-if="!fullscreenMessageViewer"
+              class="fa fa-expand-alt"
+              aria-hidden="true"
+            />
+            <i
+              v-else
+              class="fa fa-compress-alt"
+              aria-hidden="true"
+            />
           </div>
           <div class="column incoming-list">
-            <transition-group name="custom-classes-transition" enter-active-class="animated fadeIn">
-              <div v-bind:key="message.data.seen" v-for="message in messages">
+            <transition-group
+              name="custom-classes-transition"
+              enter-active-class="animated fadeIn"
+            >
+              <div
+                v-for="message in messages"
+                :key="message.data.seen"
+              >
                 <p
-                  v-on:mouseover="toggleActiveMessage(message)"
                   :class="{ active: message.active }"
                   class="line"
+                  @mouseover="toggleActiveMessage(message)"
                 >
                   [{{ message.data.cert_index }}] {{ message.data.source.url }} -
                   {{ message.data.leaf_cert.subject.CN }}
@@ -67,7 +97,10 @@
           </div>
           <div class="column raw-content">
             <div class="json-tree-wrapper">
-              <json-tree :data="activeMessage" :level="4"></json-tree>
+              <json-tree
+                :data="activeMessage"
+                :level="4"
+              />
             </div>
           </div>
         </template>
@@ -93,7 +126,7 @@ let states = {
 }
 
 export default {
-  name: "feedwatcher",
+  name: "Feedwatcher",
   components: { JsonTree },
   data() {
     return {
@@ -106,6 +139,14 @@ export default {
       timerActive: false,
       ws: null,
       pingTimer: null
+    }
+  },
+  computed: {
+    activeMessageContent: function () {
+      if (!this.activeMessage) {
+        return "Hover over a message on  the left!"
+      }
+      return JSON.stringify(this.activeMessage, null, 2)
     }
   },
   created() {
@@ -214,14 +255,6 @@ export default {
         this.$scrollTo(".message-holder", 500)
       }
       document.documentElement.classList.toggle("scroll-disabled")
-    }
-  },
-  computed: {
-    activeMessageContent: function () {
-      if (!this.activeMessage) {
-        return "Hover over a message on  the left!"
-      }
-      return JSON.stringify(this.activeMessage, null, 2)
     }
   }
 }
