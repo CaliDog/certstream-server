@@ -31,7 +31,8 @@ defmodule Certstream.CTWatcher do
     ctl_log_info
       |> Map.get("operators")
       |> Enum.each(fn operator ->
-            (Map.get(operator, "logs") || [])
+            (operator 
+            |> Map.get("logs") || [])
             |> Enum.each(fn log -> 
                 log = Map.put(log, "operator_name", operator["name"])
                 DynamicSupervisor.start_child(supervisor_name, child_spec(log))
