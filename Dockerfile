@@ -22,3 +22,7 @@ COPY config/ /opt/app/config/
 COPY lib /opt/app/lib/
 
 CMD mix run --no-halt
+
+EXPOSE 80/tcp
+EXPOSE 4000/tcp
+EXPOSE 4000/udp
