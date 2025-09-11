@@ -80,6 +80,9 @@ defmodule Certstream.ClientManager do
     serialized_certificates_lite = certificates_lite
                                      |> Enum.map(&Jason.encode!/1)
 
+    # Publish to SNS for async consumers
+    Certstream.SNSPublisher.publish_certificates(serialized_certificates_lite)
+
     dns_entries_only = certificates
                          |> Enum.map(&get_in(&1, [:data, :leaf_cert, :all_domains]))
                          |> Enum.map(fn dns_entries -> %{:message_type => "dns_entries", :data => dns_entries} end)
