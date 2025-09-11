@@ -1,16 +1,16 @@
 defmodule Certstream do
   @moduledoc """
   Certstream is a service for watching CT servers, parsing newly discovered certificates,
-  and broadcasting updates to connected websocket clients.
+  and publishing them to AWS SNS.
   """
   use Application
 
   def start(_type, _args) do
     children = [
-      # Web services
+      # Web services (health check only)
       Certstream.WebsocketServer,
 
-      # Agents
+      # Certificate processing
       Certstream.ClientManager,
       Certstream.CertifcateBuffer,
 
