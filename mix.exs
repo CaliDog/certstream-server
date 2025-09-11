@@ -5,7 +5,7 @@ defmodule Certstream.Mixfile do
     [
       app: :certstream,
       version: "1.6.0",
-      elixir: "~> 1.6",
+      elixir: "~> 1.15",
       start_permanent: Mix.env == :prod,
       deps: deps(),
       aliases: aliases(),
@@ -23,17 +23,17 @@ defmodule Certstream.Mixfile do
 
   defp deps do
     [
-      {:cowboy, "~> 2.8"},
-      {:easy_ssl, "~> 1.1"},
-      {:honeybadger, "~> 0.14"},
-      {:httpoison, "~> 1.7"},
+      {:cowboy, "~> 2.10"},
+      {:easy_ssl, github: "CaliDog/EasySSL", branch: "master"},
+      {:honeybadger, "~> 0.20"},
+      {:httpoison, "~> 2.2"},
       {:instruments, "~> 1.1"},
-      {:jason, "~> 1.2"},
+      {:jason, "~> 1.4"},
       {:number, "~> 1.0"},
       {:pobox, "~> 1.2"},
 
-      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.13", only: :test}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.18", only: :test}
     ]
   end
 

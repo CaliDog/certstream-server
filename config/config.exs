@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :certstream,
        user_agent: :default,  # Defaults to "Certstream Server v{CURRENT_VERSION}"

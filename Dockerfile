@@ -1,4 +1,4 @@
-FROM elixir:1.8-alpine
+FROM elixir:1.15-alpine
 
 WORKDIR /opt/app
 
@@ -12,7 +12,6 @@ RUN apk add git
 RUN mix local.hex --force && mix local.rebar --force
 
 ADD mix.exs ./
-ADD mix.lock ./
 
 RUN mix do deps.get, deps.compile
 
