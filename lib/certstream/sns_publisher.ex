@@ -15,9 +15,16 @@ defmodule Certstream.SNSPublisher do
   defp publish_single_certificate(certificate_json) when is_binary(certificate_json) do
     topic_arn = Application.get_env(:certstream, :sns_topic_arn)
     
-    # For now, just log the SNS publish
-    # TODO: Implement actual SNS publishing via AWS CLI or Lambda
-    Logger.info("Publishing certificate to SNS topic: #{topic_arn}")
-    Logger.debug("Certificate data: #{String.slice(certificate_json, 0, 100)}...")
+    case publish_to_sns(certificate_json, topic_arn) do
+      {:ok, %{body: body, status_code: 200}} ->
+        Logger.debug("Published certificate to SNS")
+      {:error, reason} ->
+        Logger.error("Failed to publish to SNS: #{inspect(reason)}")
+    end
+  end
+
+  defp publish_to_sns(message, topic_arn) do
+    ExAws.SNS.publish(message, topic_arn: topic_arn)
+    |> ExAws.request()
   end
 end

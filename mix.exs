@@ -25,12 +25,16 @@ defmodule Certstream.Mixfile do
     [
       {:cowboy, "~> 2.10"},
       {:easy_ssl, github: "CaliDog/EasySSL", branch: "master"},
+      {:ex_aws, "~> 2.5"},
+      {:ex_aws_sns, "~> 2.3"},
+      {:hackney, "~> 1.20"},
       {:honeybadger, "~> 0.20"},
       {:httpoison, "~> 2.2"},
       {:instruments, "~> 1.1"},
       {:jason, "~> 1.4"},
       {:number, "~> 1.0"},
       {:pobox, "~> 1.2"},
+      {:sweet_xml, "~> 0.7"},
 
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.18", only: :test}
